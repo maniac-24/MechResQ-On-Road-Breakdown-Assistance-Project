@@ -4,10 +4,13 @@
 {% block extra_css %}
 <style>
     .dashboard-wrapper {
-        margin-left: 280px;
+        margin-left: 280px; /* Keep for sidebar alignment on larger screens */
         min-height: 100vh;
         padding: 2rem;
         transition: all 0.3s ease;
+        max-width: 900px; /* Adjust as needed for overall size reduction */
+        margin-right: auto; /* Center the wrapper */
+        margin-left: auto; /* Center the wrapper */
     }
 
     .vehicle-card {
@@ -95,17 +98,65 @@
         background: #f8f9fa;
     }
 
-    @media (max-width: 768px) {
-        .dashboard-wrapper {
-            margin-left: 0;
-            padding: 1rem;
-        }
+    .empty-vehicles-card {
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        padding: 3rem 2rem;
+        text-align: center;
+        margin-top: 2rem;
+        border: 1px solid #e0e0e0;
     }
+
+    .empty-vehicles-card .icon {
+        font-size: 4rem;
+        color: #6c757d; /* A slightly darker muted color */
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-vehicles-card h5 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #343a40;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-vehicles-card p {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    .empty-vehicles-card .btn-primary {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .empty-vehicles-card .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        transform: translateY(-2px);
+    }
+
+@media (max-width: 768px) {
+    .dashboard-wrapper {
+        margin-left: 0; /* Remove sidebar margin on small screens */
+        padding: 1rem;
+        max-width: 100%; /* Full width on small screens */
+        margin-right: auto; /* Center the wrapper */
+        margin-left: auto; /* Center the wrapper */
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-{% include 'components/sidebar.html' with active_page='vehicles' %}
+{% include 'components/navbar.html' with active_page='vehicles' %}
 
 <div class="dashboard-wrapper">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -159,11 +210,11 @@
             </div>
             {% endfor %}
         {% else %}
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <i class="fas fa-car fa-3x text-muted mb-3"></i>
+            <div class="col-12 col-md-8 col-lg-6 mx-auto">
+                <div class="empty-vehicles-card">
+                    <i class="fas fa-car icon mb-3"></i>
                     <h5>No Vehicles Added Yet</h5>
-                    <p class="text-muted">Add your first vehicle to get started</p>
+                    <p>Add your first vehicle to get started</p>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
                         <i class="fas fa-plus me-2"></i>Add Vehicle
                     </button>
@@ -230,6 +281,18 @@
         </div>
     </div>
 </div>
+
+<div id="django-messages" data-messages='
+    {% if messages %}
+        [
+        {% for message in messages %}
+            "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        ]
+    {% else %}
+        []
+    {% endif %}
+'></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -255,10 +318,12 @@ function editVehicle(vehicleId) {
 }
 
 // Show success/error messages
-{% if messages %}
-    {% for message in messages %}
-        alert('{{ message }}');
-    {% endfor %}
-{% endif %}
+const messagesElement = document.getElementById('django-messages');
+if (messagesElement) {
+    const messages = JSON.parse(messagesElement.dataset.messages);
+    messages.forEach(msg => {
+        alert(msg);
+    });
+}
 </script>
-{% endblock %} 
+{% endblock %}

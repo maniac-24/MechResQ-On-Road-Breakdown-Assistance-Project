@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,109 +10,88 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <!-- Custom Theme CSS -->
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <!-- Custom Navbar CSS -->
+    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <style>
-        :root {
-            --sidebar-width: 250px;
-            --header-height: 70px;
-            --primary-color: #3498db;
-            --primary-color-rgb: 52, 152, 219;
-            --secondary-color: #2c3e50;
-            --success-color: #2ecc71;
-            --warning-color: #f1c40f;
-            --danger-color: #e74c3c;
-            --light-color: #f8fafc;
-            --dark-color: #1a202c;
-            --text-color: #2c3e50;
-            --background-color: #f8f9fa;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        body {
-            min-height: 100vh;
-            background-color: var(--background-color);
-            margin: 0;
-            padding: 0;
-            color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.5;
-            overflow-x: hidden;
-        }
-
         .page-container {
             display: flex;
-            min-height: 100vh;
+            min-height: calc(100vh - var(--header-height, 70px)); /* Adjust height for navbar */
             position: relative;
         }
 
         .content-wrapper {
             flex: 1;
-            
-            min-height: 100vh;
-            background-color: var(--background-color);
+            min-height: calc(100vh - var(--header-height, 70px)); /* Adjust height for navbar */
+            background-color: var(--background-dark); /* Use theme variable */
             transition: margin-left 0.3s ease;
-            padding: 1rem 0.75rem;
+            padding: var(--spacing-md) var(--spacing-sm); /* Use theme variables */
             position: relative;
-            width: calc(100% - var(--sidebar-width));
+            margin-left: 0; /* Remove sidebar margin */
+            width: 100%; /* Take full width */
             box-sizing: border-box;
+            color: var(--text-light); /* Use theme variable */
         }
 
         .content-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0;
+            padding: 0 var(--spacing-xl); /* Use theme variable */
         }
 
         .welcome-section {
-            margin-bottom: 1.5rem;
+            margin-bottom: var(--spacing-lg); /* Use theme variable */
         }
 
         .welcome-section h1 {
-            font-size: 1.75rem;
+            font-size: 1.75rem; /* Keep specific font size for now */
             font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: 0.25rem;
+            color: var(--text-light); /* Use theme variable */
+            margin-bottom: var(--spacing-xs); /* Use theme variable */
         }
 
         .welcome-section p {
-            color: #6c757d;
+            color: var(--text-dark); /* Use theme variable */
             font-size: 0.95rem;
             margin-bottom: 0;
         }
 
         .stats-section {
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-xl); /* Use theme variable */
         }
 
         .stats-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.25rem;
-            box-shadow: var(--card-shadow);
+            background: var(--background-medium); /* Use theme variable */
+            border-radius: var(--border-radius-md); /* Use theme variable */
+            padding: 1.25rem; /* Keep specific padding for now */
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light); /* Neumorphic shadow */
             height: 100%;
             display: flex;
             align-items: center;
+            color: var(--text-light); /* Ensure text is light */
         }
 
         .stats-icon {
             width: 48px;
             height: 48px;
-            border-radius: 10px;
+            border-radius: var(--border-radius-md); /* Use theme variable */
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 1rem;
+            margin-right: var(--spacing-md); /* Use theme variable */
             font-size: 1.5rem;
+            background-color: var(--background-light); /* Subtle background for icon */
+            box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light); /* Neumorphic inset */
         }
 
         .stats-info h3 {
             font-size: 1.75rem;
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: var(--spacing-xs); /* Use theme variable */
+            color: var(--text-light); /* Ensure text is light */
         }
 
         .stats-info p {
-            color: #6c757d;
+            color: var(--text-dark); /* Use theme variable */
             margin-bottom: 0;
             font-size: 0.9rem;
         }
@@ -121,97 +100,89 @@
             .content-wrapper {
                 margin-left: 0;
                 width: 100%;
-                padding: 1rem 0.75rem;
+                padding: var(--spacing-md) var(--spacing-sm); /* Use theme variables */
             }
         }
 
         /* Card Styles */
         .custom-card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            margin-bottom: 1rem;
+            background: var(--background-medium); /* Use theme variable */
+            border-radius: var(--border-radius-md); /* Use theme variable */
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light); /* Neumorphic shadow */
+            transition: all var(--transition-speed) var(--transition-timing);
+            margin-bottom: var(--spacing-md); /* Use theme variable */
             border: none;
+            color: var(--text-light); /* Ensure text is light */
         }
 
         .custom-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light); /* Enhanced hover shadow */
         }
 
-        /* Button Styles */
-        .custom-btn {
-            padding: 0.5rem 1.25rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .custom-btn i {
-            font-size: 1rem;
-        }
-
-        .custom-btn-primary {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-        }
-
-        .custom-btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-        }
+        /* Button Styles - using global .btn styles from theme.css */
+        /* Remove custom-btn and custom-btn-primary as global .btn handles it */
 
         /* Grid System Adjustments */
         .row {
-            margin-right: -0.5rem;
-            margin-left: -0.5rem;
+            margin-right: calc(-1 * var(--spacing-sm)); /* Use theme variable */
+            margin-left: calc(-1 * var(--spacing-sm)); /* Use theme variable */
         }
 
         .col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, 
         .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, 
         .col-sm, .col-md, .col-lg, .col-xl {
-            padding-right: 0.5rem;
-            padding-left: 0.5rem;
+            padding-right: var(--spacing-sm); /* Use theme variable */
+            padding-left: var(--spacing-sm); /* Use theme variable */
         }
 
         /* Filter Buttons */
         .filter-buttons {
-            margin-bottom: 1rem;
+            margin-bottom: var(--spacing-md); /* Use theme variable */
         }
 
         .filter-btn {
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            background: #fff;
-            border: 1px solid #dee2e6;
-            color: #6c757d;
+            padding: 0.4rem 1rem; /* Keep specific padding for now */
+            border-radius: 20px; /* Keep specific border-radius for now */
+            background: var(--background-light); /* Use theme variable */
+            border: 1px solid var(--border-color); /* Use theme variable */
+            color: var(--text-light); /* Use theme variable */
             font-size: 0.9rem;
-            margin-right: 0.5rem;
-            transition: all 0.2s ease;
+            margin-right: var(--spacing-sm); /* Use theme variable */
+            transition: all var(--transition-speed) var(--transition-timing);
+            box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light); /* Neumorphic shadow */
         }
 
         .filter-btn:hover {
             border-color: var(--primary-color);
             color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light);
         }
 
         .filter-btn.active {
             background: var(--primary-color);
-            color: #fff;
+            color: var(--text-light);
             border-color: var(--primary-color);
+            box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light); /* Neumorphic inset */
+        }
+
+        /* SOS Button Styling */
+        .sos-button {
+            background-color: var(--danger-color); /* Use theme variable */
+            color: var(--text-light);
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light); /* Neumorphic shadow */
+        }
+        .sos-button:hover {
+            background-color: #c0392b; /* Darker red on hover */
+            box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light);
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="page-container">
-        {% include 'components/sidebar.html' %}
+        {% include 'components/navbar.html' %}
         
         <div class="content-wrapper">
             <div class="content-container">
@@ -224,7 +195,84 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Immediately invoked function to set the theme on initial load
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-messaging-compat.js"></script>
+
+    <script>
+        // Firebase Configuration from Django settings
+        // Provide an empty JSON object string if firebase_config is not available to prevent JavaScript errors
+        const firebaseConfig = {{ firebase_config|safe|default:'{}' }};
+
+        // Initialize Firebase only if config is available and has an API key
+        if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
+            const app = firebase.initializeApp(firebaseConfig); // Initialize Firebase app
+
+            // Initialize Firebase Analytics if measurementId is provided
+            if (firebaseConfig.measurementId && firebase.analytics) {
+                firebase.analytics();
+                console.log("Firebase Analytics initialized.");
+            } else if (firebaseConfig.measurementId) {
+                console.warn("Firebase Analytics SDK not loaded. Analytics will not be collected.");
+            }
+
+            // Retrieve Firebase Messaging object
+            const messaging = firebase.messaging();
+
+            // Register the service worker first
+            let serviceWorkerRegistration = null;
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker
+                    .register("{% static 'firebase-messaging-sw.js' %}") // Corrected path to static root
+                    .then((registration) => {
+                        console.log("Service Worker registered:", registration);
+                        serviceWorkerRegistration = registration;
+                        // Proceed with notification permission request and token generation
+                        requestNotificationPermissionAndGetToken(serviceWorkerRegistration);
+                    })
+                    .catch((err) => {
+                        console.error("Service Worker registration failed:", err);
+                    });
+            } else {
+                console.warn("Service Workers are not supported by this browser.");
+                requestNotificationPermissionAndGetToken(null); // Attempt without service worker if not supported
+            }
+
+            function requestNotificationPermissionAndGetToken(registration) {
+                Notification.requestPermission().then((permission) => {
+                    if (permission === "granted") {
+                        const getTokenOptions = { vapidKey: "BKRbhLLAnVot5DK2wAgdZlC4nvoP0N0oYe8GADJCx5gLq-opYp2DX1sbwmlrIYNW33WLMpq01Gm_tK8HVYI50ws" };
+                        if (registration) {
+                            getTokenOptions.serviceWorkerRegistration = registration;
+                        }
+                        messaging.getToken(getTokenOptions).then((token) => {
+                            console.log("FCM Token:", token);
+                            // You can send this token to your backend to send targeted notifications
+                        }).catch((err) => {
+                            console.error("Error getting FCM token:", err);
+                        });
+                    } else {
+                        console.log("Notification permission denied.");
+                    }
+                }).catch((err) => {
+                    console.error("Error requesting notification permission:", err);
+                });
+            }
+        } else {
+            console.warn("Firebase configuration not found or incomplete. Firebase features may not work.");
+        }
+
+    </script>
+
     {% include 'chatbot/chat_widget.html' %}
 
     <button class="sos-button" id="sosButton">🚨 SOS</button>

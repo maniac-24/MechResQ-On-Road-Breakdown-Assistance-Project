@@ -3,145 +3,8 @@
 
 {% block title %}Earnings - Mechanic Dashboard{% endblock %}
 
-{% block page_css %}
-<style>
-    .earnings-container {
-        display: grid;
-        gap: 1.5rem;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    }
-
-    .earnings-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .earnings-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-
-    .summary-card {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .summary-card.total {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    }
-
-    .summary-card.pending {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    }
-
-    .summary-card h3 {
-        font-size: 1rem;
-        font-weight: 500;
-        margin: 0;
-        opacity: 0.9;
-    }
-
-    .summary-card .amount {
-        font-size: 1.875rem;
-        font-weight: 600;
-    }
-
-    .summary-card .trend {
-        font-size: 0.875rem;
-        opacity: 0.9;
-    }
-
-    .earnings-history {
-        margin-top: 1.5rem;
-    }
-
-    .history-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .history-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .history-filters {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .payment-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .payment-table th,
-    .payment-table td {
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .payment-table th {
-        background-color: #f8fafc;
-        font-weight: 500;
-        color: #64748b;
-    }
-
-    .payment-table tr:hover {
-        background-color: #f8fafc;
-    }
-
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .status-completed {
-        background-color: #dcfce7;
-        color: #166534;
-    }
-
-    .status-pending {
-        background-color: #fef3c7;
-        color: #92400e;
-    }
-
-    .status-failed {
-        background-color: #fee2e2;
-        color: #991b1b;
-    }
-
-    .chart-container {
-        height: 300px;
-        margin-top: 1.5rem;
-    }
-
-    @media (max-width: 768px) {
-        .earnings-summary {
-            grid-template-columns: 1fr;
-        }
-
-        .payment-table {
-            display: block;
-            overflow-x: auto;
-        }
-    }
-</style>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/earnings.css' %}">
 {% endblock %}
 
 {% block main_content %}
@@ -222,14 +85,14 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock main_content %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('earningsChart').getContext('2d');
-    const earningsData = {{ earnings_data|safe }};
+    const earningsData = JSON.parse('{{ earnings_data|escapejs }}');
     
     new Chart(ctx, {
         type: 'line',
@@ -238,8 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Monthly Earnings',
                 data: earningsData.values,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: 'var(--primary-color)',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)', /* Using a direct rgba for chart fill */
                 tension: 0.4,
                 fill: true
             }]
@@ -250,6 +113,15 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    backgroundColor: "var(--background-medium)",
+                    titleColor: 'var(--text-light)',
+                    bodyColor: 'var(--text-dark)',
+                    borderColor: 'var(--border-color)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false
                 }
             },
             scales: {
@@ -257,9 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     grid: {
                         drawBorder: false,
-                        color: '#e2e8f0'
+                        color: 'var(--border-color)'
                     },
                     ticks: {
+                        color: 'var(--text-dark)',
                         callback: function(value) {
                             return '₹' + value;
                         }
@@ -268,6 +141,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 x: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        color: 'var(--text-dark)'
                     }
                 }
             }
@@ -281,4 +157,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %} 
+{% endblock extra_js %}

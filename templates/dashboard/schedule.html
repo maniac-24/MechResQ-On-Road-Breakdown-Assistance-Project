@@ -3,164 +3,13 @@
 
 {% block title %}Schedule - Mechanic Dashboard{% endblock %}
 
-{% block page_css %}
+{% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core/main.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid/main.css" rel="stylesheet" />
-<style>
-    .schedule-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        padding: 1.5rem;
-    }
-
-    .schedule-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .schedule-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .schedule-actions {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .fc {
-        max-width: 100%;
-        background: white;
-        padding: 1rem;
-        border-radius: 8px;
-    }
-
-    .fc .fc-toolbar-title {
-        font-size: 1.25rem;
-        color: #1e293b;
-    }
-
-    .fc .fc-button {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-        text-transform: capitalize;
-        font-weight: 500;
-        padding: 0.5rem 1rem;
-    }
-
-    .fc .fc-button:hover {
-        background-color: #2563eb;
-        border-color: #2563eb;
-    }
-
-    .fc .fc-button-primary:not(:disabled).fc-button-active,
-    .fc .fc-button-primary:not(:disabled):active {
-        background-color: #1d4ed8;
-        border-color: #1d4ed8;
-    }
-
-    .fc-event {
-        border: none;
-        padding: 2px 4px;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-
-    .fc-event:hover {
-        transform: translateY(-1px);
-    }
-
-    .fc-event.pending {
-        background-color: #f59e0b;
-    }
-
-    .fc-event.accepted {
-        background-color: #10b981;
-    }
-
-    .fc-event.in-progress {
-        background-color: #3b82f6;
-    }
-
-    .fc-event.completed {
-        background-color: #6366f1;
-    }
-
-    .fc-event.cancelled {
-        background-color: #ef4444;
-    }
-
-    .event-details {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        min-width: 300px;
-    }
-
-    .event-details.show {
-        display: block;
-    }
-
-    .event-details h3 {
-        margin-top: 0;
-        color: #1e293b;
-    }
-
-    .event-details-content {
-        margin: 1rem 0;
-    }
-
-    .event-details-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-    }
-
-    .overlay.show {
-        display: block;
-    }
-
-    @media (max-width: 768px) {
-        .schedule-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .fc .fc-toolbar {
-            flex-direction: column;
-            gap: 1rem;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/schedule.css' %}">
 {% endblock %}
 
-{% block main_content %}
+{% block content %}
 <div class="schedule-container">
     <div class="schedule-header">
         <h1 class="schedule-title">My Schedule</h1>
@@ -170,6 +19,13 @@
                 <option value="dayGridWeek">Week</option>
                 <option value="dayGridDay">Day</option>
             </select>
+            <div class="event-legend">
+                <span class="legend-item pending">Pending</span>
+                <span class="legend-item accepted">Accepted</span>
+                <span class="legend-item in-progress">In Progress</span>
+                <span class="legend-item completed">Completed</span>
+                <span class="legend-item cancelled">Cancelled</span>
+            </div>
         </div>
     </div>
     <div id="calendar"></div>
@@ -245,4 +101,4 @@ function closeEventDetails() {
 // Close modal when clicking outside
 document.getElementById('overlay').addEventListener('click', closeEventDetails);
 </script>
-{% endblock %} 
+{% endblock %}

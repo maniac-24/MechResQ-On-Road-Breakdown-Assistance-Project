@@ -46,9 +46,16 @@ def chatbot_response(request):
             }
 
             with httpx.Client() as client:
-                response = client.post(OPENROUTER_API_BASE, headers=headers, json=payload)
+                response = client.post(OPENROUTER_API_BASE, headers=headers, json=payload, timeout=30.0) # Increased timeout to 30 seconds
                 response.raise_for_status() # Raise an exception for 4xx or 5xx status codes
-                ai_response = response.json()["choices"][0]["message"]["content"]
+                
+                # Debugging: Print the full API response
+                print("OpenRouter API Response:", response.json())
+
+                try:
+                    ai_response = response.json()["choices"][0]["message"]["content"]
+                except (KeyError, IndexError) as e:
+                    return JsonResponse({'error': f"Error parsing API response: {e}. Full response: {response.json()}"}, status=500)
 
             ChatMessage.objects.create(
                 user=request.user,
@@ -61,7 +68,11 @@ def chatbot_response(request):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except httpx.HTTPStatusError as e:
-            return JsonResponse({'error': f"HTTP error: {e.response.status_code} - {e.response.text}"}, status=500)
+            # Log the full response text for debugging
+            print(f"OpenRouter API HTTP Error: {e.response.status_code} - {e.response.text}")
+            return JsonResponse({'error': f"HTTP error: {e.response.status_code} - {e.response.text}", 'api_response_detail': e.response.text}, status=500)
         except Exception as e:
+            # Log the generic exception for debugging
+            print(f"Generic Exception: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)

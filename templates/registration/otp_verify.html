@@ -1,0 +1,65 @@
+{% extends 'base_empty.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/otp_verify.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+  <div class="modal-overlay" id="otpSuccessModal" style="display: none;">
+    <div class="custom-modal">
+      <div class="icon-circle">
+        <i class="fas fa-check"></i>
+      </div>
+      <p id="modalMessage"></p>
+      <button class="btn-ok" id="okButton">OK</button>
+    </div>
+  </div>
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title text-center" style="color: var(--text-light);">Enter OTP</h2>
+            <p class="text-center" style="color: var(--text-light);">A One-Time Password (OTP) has been sent to your registered email address. Please enter it below to proceed.</p>
+            <form method="post">
+              {% csrf_token %}
+              <div class="form-group mb-3">
+                <label for="id_otp" class="form-label">Otp code*</label>
+                <input type="text" name="otp" class="form-control" placeholder="Enter OTP" required id="id_otp">
+                <small class="form-text text-muted">Enter the 6-digit code sent to your email.</small>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Verify OTP</button>
+            </form>
+            <div class="text-center mt-3">
+              <p style="color: var(--text-light);">Didn't receive an OTP? <a href="#" class="btn-link">Resend OTP</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(document).ready(function() {
+    var otpSuccessModal = $('#otpSuccessModal');
+    var modalMessage = $('#modalMessage');
+    var okButton = $('#okButton');
+
+    // Get Django messages and convert to a JavaScript array
+    var djangoMessages = JSON.parse('{{ messages|safe|escapejs }}');
+
+    // If there are messages, display the first one in the modal
+    if (djangoMessages.length > 0) {
+      modalMessage.text(djangoMessages[0]);
+      otpSuccessModal.show();
+    }
+
+    okButton.on('click', function() {
+      otpSuccessModal.hide();
+    });
+  });
+</script>
+{% endblock extra_js %}

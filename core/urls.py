@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, reverse_lazy
 from . import views, notification_views
 from django.contrib.auth import views as auth_views
 
@@ -21,21 +21,13 @@ urlpatterns = [
     path('notifications/<int:notification_id>/mark-read/', notification_views.mark_notification_read, name='mark_notification_read'),
     
     # Password Reset URLs
-    path('password-reset/',
-         auth_views.PasswordResetView.as_view(template_name='registration/password_reset.html'),
-         name='password_reset'),
-    path('password-reset/done/',
-         auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'),
-         name='password_reset_done'),
-    path('password-reset-confirm/<uidb64>/<token>/',
-         auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'),
-         name='password_reset_confirm'),
-    path('password-reset-complete/',
-         auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'),
-         name='password_reset_complete'),
+    path('password-reset/', views.password_reset_request, name='password_reset'),
+    path('otp-verify/', views.otp_verify, name='otp_verify'),
+    path('password-reset-new-password/', views.password_reset_new_password, name='password_reset_new_password'),
     
     # Service History URLs
     path('service-history/', views.service_history, name='service_history'),
+    path('service-history/delete/<int:pk>/', views.delete_service_request, name='delete_service_request'),
     path('vehicles/', views.vehicles, name='vehicles'),
     path('profile/', views.profile, name='profile'),
     
@@ -58,4 +50,6 @@ urlpatterns = [
     path('service/<int:service_id>/process-payment/', views.process_payment, name='process_payment'),
     path('service-request/<int:service_request_id>/assign-mechanic/<int:mechanic_id>/', views.assign_mechanic, name='assign_mechanic'),
     path('api/mechanic/<int:mechanic_id>/location-history/', views.get_location_history, name='get_location_history'),
+    path('service/<int:service_id>/waiting-for-mechanic/', views.waiting_for_mechanic, name='waiting_for_mechanic'),
+    path('custom-map/', views.custom_map_view, name='custom_map_view'),
 ]

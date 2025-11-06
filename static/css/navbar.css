@@ -1,0 +1,115 @@
+/* General Navbar Styling */
+.navbar {
+    background-color: var(--background-medium) !important;
+    box-shadow: 0 5px 15px var(--shadow-dark);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand {
+    padding: 0;
+    margin-right: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+}
+
+.navbar-logo {
+    height: 70px; /* Increased logo size */
+    width: auto;
+    transition: transform var(--transition-speed) var(--transition-timing);
+}
+
+.navbar-logo:hover {
+    transform: scale(1.05);
+}
+
+.navbar-nav {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.navbar-nav .nav-item {
+    margin-right: var(--spacing-lg); /* Increased space between tabs */
+}
+
+.navbar-nav .nav-link {
+    color: var(--text-light);
+    font-weight: 500;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-speed) var(--transition-timing);
+    display: flex;
+    align-items: center;
+}
+
+.navbar-nav .nav-link i {
+    margin-right: var(--spacing-sm);
+    color: var(--text-dark);
+    transition: color var(--transition-speed) var(--transition-timing);
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+}
+
+.navbar-nav .nav-link:hover i {
+    color: var(--primary-color);
+}
+
+.navbar-nav .nav-link.active {
+    background-color: var(--primary-color);
+    color: var(--text-light) !important;
+    box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.navbar-nav .nav-link.active i {
+    color: var(--text-light);
+}
+
+/* Logout button specific styling */
+.navbar-nav .btn-outline-danger {
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+    transition: all var(--transition-speed) var(--transition-timing);
+}
+
+.navbar-nav .btn-outline-danger:hover {
+    background-color: var(--danger-color);
+    color: var(--text-light);
+    box-shadow: 0 4px 15px rgba(var(--danger-color-rgb), 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .navbar-nav {
+        margin-top: var(--spacing-md);
+        border-top: 1px solid var(--border-color);
+        padding-top: var(--spacing-sm);
+    }
+
+    .navbar-nav .nav-item {
+        margin-right: 0;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .navbar-nav .nav-link {
+        justify-content: flex-start;
+    }
+
+    .navbar-nav .btn-outline-danger {
+        margin-left: 0 !important;
+        width: 100%;
+        text-align: left;
+    }
+}
+
+/* Adjust content padding for fixed navbar */
+body {
+    padding-top: var(--header-height, 70px); /* Height of the fixed navbar, with fallback */
+}
+
+/* Specific styles for badges in nav links */
+.nav-link .badge {
+    margin-left: auto;
+}

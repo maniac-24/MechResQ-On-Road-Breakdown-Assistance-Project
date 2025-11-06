@@ -15,16 +15,15 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
-                        <img src="{% static 'images/payment-secure.png' %}" alt="Secure Payment" class="mb-3" style="height: 60px;">
+                        <img src="{% static 'images/secure_protection_icon.jpg' %}" alt="Secure Payment" class="mb-3" style="height: 60px;">
                         <h5 class="text-primary mb-0">Amount: ₹{{ total_amount }}</h5>
-                        <p class="text-muted">Service Request #{{ service_request.id }}</p>
                     </div>
 
                     {% if payment_method == 'UPI' %}
                     <div class="payment-upi mb-4">
                         <h5 class="mb-3">Pay using UPI</h5>
                         <div class="text-center mb-3">
-                            <img src="{% static 'images/qr-code.png' %}" alt="QR Code" style="height: 200px;">
+                            <img src="{% static 'images/payment_qr.png' %}" alt="QR Code" style="height: 200px;">
                             <p class="mt-2 mb-0">Scan QR code to pay</p>
                         </div>
                         <div class="text-center">
@@ -84,9 +83,16 @@
                         <input type="hidden" name="service_charge" value="{{ service_charge }}">
                         <input type="hidden" name="tax" value="{{ tax }}">
                         <input type="hidden" name="total_amount" value="{{ total_amount }}">
-                        <button type="submit" class="btn btn-primary btn-lg w-100" onclick="return simulatePayment()">
-                            <i class="fas fa-lock me-2"></i>Pay Securely
-                        </button>
+{% if payment_method == 'CASH' %}
+<a href="{% url 'core:waiting_for_mechanic' service_request.id %}" 
+   class="btn btn-warning btn-lg w-100">
+   <i class="fas fa-hourglass-half me-2"></i>Continue (Cash Payment)
+</a>
+{% else %}
+<button type="submit" class="btn btn-primary btn-lg w-100" onclick="return simulatePayment()">
+   <i class="fas fa-lock me-2"></i>Pay Securely
+</button>
+{% endif %}
                     </form>
 
                     <div class="text-center mt-4">
@@ -177,4 +183,4 @@ function simulatePayment() {
 }
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

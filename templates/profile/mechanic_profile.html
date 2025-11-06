@@ -3,186 +3,8 @@
 
 {% block title %}Profile Settings - Mechanic Dashboard{% endblock %}
 
-{% block page_css %}
-<style>
-    .profile-container {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .profile-picture {
-        position: relative;
-        width: 120px;
-        height: 120px;
-    }
-
-    .profile-picture img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 3px solid #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .profile-picture .upload-overlay {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        background: #3b82f6;
-        color: white;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border: 2px solid #fff;
-    }
-
-    .profile-info h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .profile-info p {
-        color: #64748b;
-        margin: 0;
-    }
-
-    .form-section {
-        margin-bottom: 2rem;
-    }
-
-    .form-section h2 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 1rem;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-    }
-
-    .form-group {
-        margin-bottom: 1rem;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        color: #1e293b;
-        transition: all 0.2s;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .form-group.full-width {
-        grid-column: span 2;
-    }
-
-    .btn-save {
-        background-color: #3b82f6;
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-save:hover {
-        background-color: #2563eb;
-    }
-
-    .map-container {
-        height: 400px;
-        border-radius: 0.375rem;
-        overflow: hidden;
-        margin-top: 1rem;
-        z-index: 1;
-    }
-
-    /* OpenStreetMap Search Control Styles */
-    .leaflet-control-geocoder {
-        background: white;
-        border-radius: 4px;
-        padding: 5px;
-    }
-
-    .leaflet-control-geocoder input {
-        width: 200px;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-
-    .leaflet-control-geocoder ul {
-        list-style: none;
-        padding: 0;
-        margin: 5px 0 0 0;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    .leaflet-control-geocoder li {
-        padding: 5px;
-        cursor: pointer;
-    }
-
-    .leaflet-control-geocoder li:hover {
-        background: #f0f0f0;
-    }
-
-    @media (max-width: 768px) {
-        .profile-header {
-            flex-direction: column;
-            text-align: center;
-            gap: 1rem;
-        }
-
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .form-group.full-width {
-            grid-column: span 1;
-        }
-    }
-</style>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/mechanic-profile.css' %}">
 {% endblock %}
 
 {% block main_content %}
@@ -233,8 +55,79 @@
                 </div>
             </div>
         </div>
-
-        <div class="form-section">
+        <div class="mb-3">
+            <label class="form-label">Mode:</label>
+            <div class="d-flex gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="themeMode" id="lightModeRadio" value="light">
+                    <label class="form-check-label" for="lightModeRadio">
+                        Light Mode
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="themeMode" id="darkModeRadio" value="dark">
+                    <label class="form-check-label" for="darkModeRadio">
+                        Dark Mode
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+                        <label for="preferredLanguage" class="form-label">Preferred Language</label>
+                        <div class="custom-select-wrapper">
+                            <div class="form-control custom-select-trigger" id="customPreferredLanguage">
+                                {{ user.get_preferred_language_display|default:"Select Language" }}
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            </div>
+                            <div class="custom-options" id="preferredLanguageOptions">
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langEnglish">English</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langEnglish" value="en" {% if user.preferred_language == 'en' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langHindi">Hindi</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langHindi" value="hi" {% if user.preferred_language == 'hi' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langKannada">Kannada</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langKannada" value="kn" {% if user.preferred_language == 'kn' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langMalayalam">Malayalam</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langMalayalam" value="ml" {% if user.preferred_language == 'ml' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langMarathi">Marathi</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langMarathi" value="mr" {% if user.preferred_language == 'mr' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langTamil">Tamil</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langTamil" value="ta" {% if user.preferred_language == 'ta' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langTelugu">Telugu</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langTelugu" value="te" {% if user.preferred_language == 'te' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langBengali">Bengali</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langBengali" value="bn" {% if user.preferred_language == 'bn' %}checked{% endif %}>
+                                </div>
+                            </div>
+                            <!-- Hidden select to hold the actual value for form submission -->
+                            <select class="form-control d-none" id="preferredLanguageHidden" name="preferred_language">
+                                <option value="en" {% if user.preferred_language == 'en' %}selected{% endif %}>English</option>
+                                <option value="hi" {% if user.preferred_language == 'hi' %}selected{% endif %}>Hindi</option>
+                                <option value="kn" {% if user.preferred_language == 'kn' %}selected{% endif %}>Kannada</option>
+                                <option value="ml" {% if user.preferred_language == 'ml' %}selected{% endif %}>Malayalam</option>
+                                <option value="mr" {% if user.preferred_language == 'mr' %}selected{% endif %}>Marathi</option>
+                                <option value="ta" {% if user.preferred_language == 'ta' %}selected{% endif %}>Tamil</option>
+                                <option value="te" {% if user.preferred_language == 'te' %}selected{% endif %}>Telugu</option>
+                                <option value="bn" {% if user.preferred_language == 'bn' %}selected{% endif %}>Bengali</option>
+                            </select>
+                        </div>
+                    </div>
+            <div class="form-section">
+                
             <h2>Professional Information</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -268,9 +161,10 @@
         </div>
     </form>
 </div>
-{% endblock %}
+{% endblock main_content %}
 
 {% block extra_js %}
+<script src="{% static 'js/theme-toggle.js' %}"></script>
 <script>
     let map;
     let marker;
@@ -287,6 +181,15 @@
         map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: initialLat, lng: initialLng },
             zoom: 13,
+            mapTypeControl: true, // Enable map type control (Map/Satellite)
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+                position: google.maps.ControlPosition.TOP_RIGHT,
+            },
+            streetViewControl: false, // Disable street view
+            fullscreenControl: false, // Disable fullscreen control
+            zoomControl: true, // Enable zoom controls
+            gestureHandling: "greedy", // Allow map dragging
         });
 
         marker = new google.maps.Marker({
@@ -365,4 +268,41 @@
     }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap" async defer></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const customSelectTrigger = document.getElementById('customPreferredLanguage');
+        const preferredLanguageOptions = document.getElementById('preferredLanguageOptions');
+        const preferredLanguageHidden = document.getElementById('preferredLanguageHidden');
+
+        customSelectTrigger.addEventListener('click', function() {
+            preferredLanguageOptions.classList.toggle('show');
+            customSelectTrigger.classList.toggle('active');
+        });
+
+        preferredLanguageOptions.querySelectorAll('.form-check-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const selectedText = this.parentNode.querySelector('.form-check-label').textContent;
+                customSelectTrigger.innerHTML = `${selectedText} <i class="fas fa-chevron-down dropdown-arrow"></i>`;
+                preferredLanguageHidden.value = this.value;
+                preferredLanguageOptions.classList.remove('show');
+                customSelectTrigger.classList.remove('active');
+            });
+        });
+
+        // Close the dropdown if clicked outside
+        document.addEventListener('click', function(event) {
+            if (!customSelectTrigger.contains(event.target) && !preferredLanguageOptions.contains(event.target)) {
+                preferredLanguageOptions.classList.remove('show');
+                customSelectTrigger.classList.remove('active');
+            }
+        });
+
+        // Initialize the custom select display with the currently selected value
+        const initialSelectedOption = preferredLanguageHidden.options[preferredLanguageHidden.selectedIndex];
+        if (initialSelectedOption) {
+            customSelectTrigger.innerHTML = `${initialSelectedOption.textContent} <i class="fas fa-chevron-down dropdown-arrow"></i>`;
+        }
+    });
+</script>
 {% endblock %}

@@ -3,330 +3,18 @@
 {% block title %}Mechanic Dashboard - Vehicle Breakdown Service{% endblock %}
 
 {% block extra_css %}
-<style>
-    body {
-        overflow-x: hidden;
-    }
-
-    .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-        background: #f8fafc;
-        position: relative;
-        width: 100%;
-    }
-
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 280px;
-        height: 100vh;
-        background: #fff;
-        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
-        z-index: 1000;
-        overflow-y: auto;
-    }
-
-    .main-content {
-        flex: 1;
-        margin-left: 280px;
-        padding: 2rem;
-        min-height: 100vh;
-        width: calc(100% - 280px);
-        position: relative;
-        z-index: 1;
-        background: #f8fafc;
-    }
-
-    .dashboard-header {
-        width: 100%;
-        margin-bottom: 2rem;
-    }
-
-    .welcome-section {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #2980b9 100%);
-        border-radius: 16px;
-        padding: 2rem;
-        color: white;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-    }
-
-    .welcome-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
-        opacity: 0.2;
-    }
-
-    .welcome-text h1 {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .welcome-text p {
-        font-size: 1rem;
-        opacity: 0.9;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        width: 100%;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-    }
-
-    .stat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-    }
-
-    .stat-title {
-        font-size: 0.875rem;
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    .stat-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    .stat-trend {
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .trend-up {
-        color: #10b981;
-    }
-
-    .trend-down {
-        color: #ef4444;
-    }
-
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 1.5rem;
-        width: 100%;
-    }
-
-    .chart-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        height: 400px;
-    }
-
-    .chart-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-    }
-
-    .chart-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .service-requests {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .request-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e9f2;
-    }
-
-    .request-list {
-        padding: 1rem;
-    }
-
-    .request-item {
-        padding: 1rem;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .request-item:hover {
-        background: #f1f5f9;
-    }
-
-    .request-item:not(:last-child) {
-        margin-bottom: 0.5rem;
-    }
-
-    .request-info {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-    }
-
-    .request-details h4 {
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    .request-details p {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin: 0;
-    }
-
-    .request-status {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-
-    .status-pending {
-        background: #fff7ed;
-        color: #c2410c;
-    }
-
-    .status-progress {
-        background: #ecfdf5;
-        color: #047857;
-    }
-
-    .chart-container {
-        position: relative;
-        height: 300px !important;
-        width: 100% !important;
-    }
-
-    @media (max-width: 1024px) {
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.active {
-            transform: translateX(0);
-        }
-
-        .main-content {
-            margin-left: 0;
-            width: 100%;
-            padding: 1rem;
-        }
-
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .welcome-section {
-            padding: 1.5rem;
-        }
-
-        .welcome-text h1 {
-            font-size: 1.5rem;
-        }
-    }
-
-    .chart-period-selector select {
-        padding: 0.375rem 2rem 0.375rem 0.75rem;
-        font-size: 0.875rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.375rem;
-        color: #475569;
-        background-color: #fff;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .chart-period-selector select:hover {
-        border-color: #cbd5e1;
-    }
-
-    .chart-period-selector select:focus {
-        outline: none;
-        border-color: rgba(78, 115, 223, 0.5);
-        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
-    }
-
-    .chart-area {
-        position: relative;
-        margin: 0 -10px;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/mechanic-dashboard.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
-    
-    <div class="sidebar">
-        {% include 'includes/mechanic_sidebar.html' %}
-    </div>
-
     <main class="main-content">
         <div class="dashboard-header">
             <div class="welcome-section">
                     <div class="welcome-text">
                         <h1>Welcome back, {{ request.user.get_full_name }}</h1>
                         <p>Here's what's happening with your service requests today</p>
-                        <button id="updateLocationBtn" class="btn btn-light btn-sm mt-3 shadow-sm hover-scale">
-                            <i class="fas fa-map-marker-alt me-2"></i> Update My Location
-                        </button>
+                        <div id="mechanicTrackingStatus" class="mt-3"></div>
                     </div>
             </div>
 
@@ -334,7 +22,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-title">Total Services</span>
-                        <div class="stat-icon" style="background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color);">
+                        <div class="stat-icon" style="color: var(--primary-color);">
                             <i class="fas fa-tools"></i>
                         </div>
                     </div>
@@ -348,7 +36,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-title">Completed Services</span>
-                        <div class="stat-icon" style="background: #ecfdf5; color: #047857;">
+                        <div class="stat-icon" style="color: #047857;">
                             <i class="fas fa-check-circle"></i>
                         </div>
                     </div>
@@ -362,7 +50,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-title">In Progress</span>
-                        <div class="stat-icon" style="background: #fff7ed; color: #c2410c;">
+                        <div class="stat-icon" style="color: #c2410c;">
                             <i class="fas fa-clock"></i>
                         </div>
                     </div>
@@ -376,7 +64,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-title">Total Earnings</span>
-                        <div class="stat-icon" style="background: #f0fdf4; color: #16a34a;">
+                        <div class="stat-icon" style="color: #16a34a;">
                             <i class="fas fa-dollar-sign"></i>
                         </div>
                     </div>
@@ -389,9 +77,9 @@
             </div>
 
             <div class="dashboard-grid">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Service Performance</h6>
+                <div class="chart-card mb-4">
+                    <div class="chart-header">
+                        <h6 class="m-0 font-weight-bold" style="color: var(--text-light);">Service Performance</h6>
                         <div class="chart-period-selector">
                             <select class="form-select form-select-sm" id="chartPeriod">
                                 <option value="7">Last 7 Days</option>
@@ -425,7 +113,7 @@
                             </div>
                         </a>
                         {% empty %}
-                        <div class="text-center py-4 text-muted">
+                        <div class="text-center py-4" style="color: var(--text-dark);">
                             No recent service requests
                         </div>
                         {% endfor %}
@@ -451,8 +139,35 @@
                             </div>
                         </div>
                         {% empty %}
-                        <div class="text-center py-4 text-muted">
+                        <div class="text-center py-4" style="color: var(--text-dark);">
                             No emergency requests
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="service-requests mt-4">
+                    <div class="request-header">
+                        <h3 class="chart-title">Cash Payments to Confirm</h3>
+                    </div>
+                    <div class="request-list">
+                        {% for service_request in cash_payment_requests %}
+                            <div class="request-item d-flex justify-content-between align-items-center">
+                                <div class="request-details">
+                                    <h4>Cash Payment for #{{ service_request.id }}</h4>
+                                    <p>Customer: {{ service_request.user.get_full_name }}</p>
+                                    <p>Amount: ₹{{ service_request.payment.total_amount }}</p>
+                                </div>
+                                <form method="POST" action="{% url 'core:confirm_cash_payment' service_request.payment.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check-circle me-1"></i> Confirm Cash Payment
+                                    </button>
+                                </form>
+                            </div>
+                        {% empty %}
+                        <div class="text-center py-4" style="color: var(--text-dark);">
+                            No pending cash payments to confirm.
                         </div>
                         {% endfor %}
                     </div>
@@ -677,45 +392,125 @@
         }
     }
 
-    // Function to update mechanic's location
-    document.getElementById('updateLocationBtn').addEventListener('click', function() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-
-                    fetch('{% url "core:update_mechanic_location" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCookie('csrftoken')
-                        },
-                        body: JSON.stringify({
-                            latitude: latitude,
-                            longitude: longitude
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Your location has been updated successfully!');
-                        } else {
-                            alert('Error updating location: ' + data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred while updating your location.');
-                    });
-                },
-                (error) => {
-                    alert('Error getting your location: ' + error.message);
-                }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser.');
+    // Mechanic Location Tracking (Firebase Realtime Database)
+    const activeMechanicServiceRequestScript = document.getElementById('active_mechanic_service_request_data');
+    let activeMechanicServiceRequest = null;
+    if (activeMechanicServiceRequestScript) {
+        try {
+            activeMechanicServiceRequest = JSON.parse(activeMechanicServiceRequestScript.textContent);
+        } catch (e) {
+            console.error("Error parsing active_mechanic_service_request_data:", e);
         }
-    });
+    }
+
+    let firebaseDatabase; // Firebase Realtime Database instance
+    let watchId; // To store the ID of the geolocation watchPosition
+
+    // Initialize Firebase Realtime Database if config is available
+    if (firebase && firebase.database) {
+        firebaseDatabase = firebase.database();
+    } else {
+        console.error("Firebase Realtime Database not initialized. Check Firebase SDK loading in base.html.");
+    }
+
+    // Start continuous location tracking if there's an active service request
+    if (activeMechanicServiceRequest && firebaseDatabase) {
+        startMechanicLocationTracking(activeMechanicServiceRequest.mechanic_id);
+    } else {
+        const statusDiv = document.getElementById('mechanicTrackingStatus');
+        if (statusDiv) {
+            statusDiv.innerHTML = '<span class="text-muted"><i class="fas fa-info-circle me-1"></i> No active service request for live tracking.</span>';
+        }
+    }
+
+    /**
+     * Starts continuous geolocation tracking and updates Firebase Realtime Database.
+     * @param {number} mechanicId - The ID of the mechanic whose location is being tracked.
+     */
+    function startMechanicLocationTracking(mechanicId) {
+        const statusDiv = document.getElementById('mechanicTrackingStatus');
+        if (!navigator.geolocation) {
+            if (statusDiv) statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Geolocation is not supported by your browser.</span>';
+            console.error("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        if (statusDiv) statusDiv.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i> Starting live location tracking...</span>';
+
+        // Watch the mechanic's position continuously
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+
+                // Path in Firebase Realtime Database to update mechanic's location
+                const mechanicLocationRef = firebaseDatabase.ref(`mechanic_locations/${mechanicId}`);
+                
+                // Update Firebase with the new location
+                mechanicLocationRef.set({
+                    latitude: latitude,
+                    longitude: longitude,
+                    timestamp: new Date().toISOString()
+                })
+                .then(() => {
+                    if (statusDiv) statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-map-marker-alt me-1"></i> Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}</span>`;
+                    console.log(`Mechanic ${mechanicId} location updated to Firebase: ${latitude}, ${longitude}`);
+                })
+                .catch((error) => {
+                    if (statusDiv) statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Error updating location to Firebase.</span>';
+                    console.error("Error writing mechanic location to Firebase:", error);
+                });
+
+                // Also send to Django backend for database persistence (LocationHistory and ServiceRequest updates)
+                sendLocationToDjango(latitude, longitude);
+            },
+            (error) => {
+                if (statusDiv) statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Error tracking location: ${error.message}</span>`;
+                console.error("Error watching mechanic location:", error);
+            },
+            {
+                enableHighAccuracy: true, // Request high accuracy
+                maximumAge: 0, // No cached position
+                timeout: 5000 // 5 seconds timeout
+            }
+        );
+    }
+
+    /**
+     * Sends the mechanic's current location to the Django backend for persistence.
+     * This updates the Mechanic model and active ServiceRequest models.
+     * @param {number} latitude - The current latitude.
+     * @param {number} longitude - The current longitude.
+     */
+    function sendLocationToDjango(latitude, longitude) {
+        fetch('{% url "core:update_mechanic_location" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                latitude: latitude,
+                longitude: longitude
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Error updating location to Django backend: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('An error occurred while updating location to Django backend:', error);
+        });
+    }
+
+    // Optional: Stop tracking when the mechanic navigates away or logs out
+    // window.addEventListener('beforeunload', () => {
+    //     if (watchId) {
+    //         navigator.geolocation.clearWatch(watchId);
+    //         console.log("Mechanic location tracking stopped.");
+    //     }
+    // });
 </script>
 {% endblock %}

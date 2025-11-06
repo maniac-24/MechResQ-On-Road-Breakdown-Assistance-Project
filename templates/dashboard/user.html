@@ -3,128 +3,33 @@
 {% load service_request_filters %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user-dashboard.css' %}">
 <style>
-    .dashboard-content {
-        padding: 2rem;
+    #map {
+        height: 400px; /* Fixed height for the map */
+        width: 100%;
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-lg);
+        box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
     }
-
-    .stat-card {
-        background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-        overflow: hidden;
+    .map-container {
+        margin-bottom: var(--spacing-xl);
     }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+    .arrival-message {
+        background-color: var(--success-color);
+        color: var(--text-light);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-top: var(--spacing-md);
+        box-shadow: 2px 2px 5px var(--shadow-dark);
     }
-
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-
-    .service-request-card {
-        background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-        margin-bottom: 1.5rem;
-        overflow: hidden;
-    }
-
-    .service-request-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .request-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid #eee;
-        background-color: #f8f9fa;
-    }
-
-    .request-body {
-        padding: 1.5rem;
-    }
-
-    .request-footer {
-        padding: 1.25rem;
-        background-color: #f8f9fa;
-        border-top: 1px solid #eee;
-    }
-
-    .status-badge {
-        padding: 0.5rem 1.25rem;
-        border-radius: 50px;
-        font-weight: 500;
-        font-size: 0.875rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .filter-buttons {
-        background: #fff;
-        padding: 0.5rem;
-        border-radius: 10px;
-        display: inline-flex;
-        gap: 0.5rem;
-    }
-
-    .filter-button {
-        padding: 0.5rem 1.25rem;
-        border-radius: 8px;
-        border: none;
-        background: transparent;
-        color: #6c757d;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .filter-button.active {
-        background: #3498db;
-        color: #fff;
-    }
-
-    .mechanic-info {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1rem;
-    }
-
-    .bg-gradient-primary {
-        background: linear-gradient(45deg, #3498db, #2980b9);
-    }
-
-    .bg-gradient-success {
-        background: linear-gradient(45deg, #2ecc71, #27ae60);
-    }
-
-    .bg-gradient-warning {
-        background: linear-gradient(45deg, #f1c40f, #f39c12);
-    }
-
-    .status-pending {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-
-    .status-in-progress {
-        background-color: #cce5ff;
-        color: #004085;
-    }
-
-    .status-completed {
-        background-color: #d4edda;
-        color: #155724;
+    @media (max-width: 768px) {
+        #map {
+            height: 300px;
+        }
     }
 </style>
 {% endblock %}
@@ -136,14 +41,15 @@
         <!-- Welcome Section -->
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-3 mb-4">
             <div>
-                <h1 class="h3 mb-0" style="color: #2c3e50;">Welcome back, {{ request.user.get_full_name }}</h1>
-                <p class="text-muted mb-0">Here's what's happening with your service requests</p>
+                <h1 class="h3 mb-0" style="color: var(--text-light);">Welcome back, {{ request.user.get_full_name }}</h1>
+                <p class="text-muted mb-0" style="color: var(--text-dark);">Here's what's happening with your service requests</p>
             </div>
             <a href="{% url 'core:create_service_request' %}" class="btn btn-primary d-flex align-items-center gap-2">
                 <i class="fas fa-plus"></i>
                 New Service Request
             </a>
         </div>
+
 
         <!-- Statistics Section -->
         <div class="row g-4 mb-4">
@@ -195,10 +101,10 @@
         </div>
 
         <!-- Service Requests Section -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
+        <div class="card border-0 shadow-sm custom-card">
+            <div class="card-header bg-white py-3 request-header">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <h5 class="mb-0" style="color: #2c3e50;">Your Service Requests</h5>
+                    <h5 class="mb-0" style="color: var(--text-light);">Your Service Requests</h5>
                     <div class="filter-buttons">
                         <button type="button" class="filter-button active" data-filter="all">All</button>
                         <button type="button" class="filter-button" data-filter="active">Active</button>
@@ -212,8 +118,8 @@
                     <div class="request-header">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <div>
-                                <h6 class="mb-1">#{{ request.id }} - {{ request.vehicle_type }}</h6>
-                                <small class="text-muted">
+                                <h6 class="mb-1" style="color: var(--text-light);">#{{ request.id }} - {{ request.vehicle_type }}</h6>
+                                <small class="text-muted" style="color: var(--text-dark) !important;">
                                     <i class="fas fa-calendar-alt me-1"></i>
                                     {{ request.created_at|date:"M d, Y" }}
                                 </small>
@@ -227,11 +133,11 @@
                     <div class="request-body">
                         <div class="row g-4">
                             <div class="col-md-8">
-                                <p class="mb-3">
+                                <p class="mb-3" style="color: var(--text-light);">
                                     <i class="fas fa-tools me-2 text-primary"></i>
                                     {{ request.issue_description|truncatechars:100 }}
                                 </p>
-                                <p class="mb-0">
+                                <p class="mb-0" style="color: var(--text-light);">
                                     <i class="fas fa-map-marker-alt me-2 text-danger"></i>
                                     {{ request.location }}
                                 </p>
@@ -248,8 +154,8 @@
                                                  alt="Mechanic" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;">
                                         {% endif %}
                                         <div class="ms-3">
-                                            <h6 class="mb-1">{{ request.mechanic.user.get_full_name }}</h6>
-                                            <small class="text-muted">{{ request.mechanic.specialization }}</small>
+                                            <h6 class="mb-1" style="color: var(--text-light);">{{ request.mechanic.user.get_full_name }}</h6>
+                                            <small class="text-muted" style="color: var(--text-dark) !important;">{{ request.mechanic.specialization }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -272,9 +178,9 @@
                 </div>
                 {% empty %}
                 <div class="text-center py-5">
-                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                    <h5>No Service Requests Yet</h5>
-                    <p class="text-muted">Create your first service request to get started</p>
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3" style="color: var(--text-dark) !important;"></i>
+                    <h5 style="color: var(--text-light);">No Service Requests Yet</h5>
+                    <p class="text-muted" style="color: var(--text-dark) !important;">Create your first service request to get started</p>
                     <a href="{% url 'core:create_service_request' %}" class="btn btn-primary">
                         <i class="fas fa-plus me-2"></i>New Service Request
                     </a>
@@ -309,6 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
 });
 </script>
 {% endblock %}

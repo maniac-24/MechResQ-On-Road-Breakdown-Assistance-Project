@@ -146,8 +146,17 @@ LOGIN_URL = "core:login"
 # Crispy forms settings
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-# Email settings (for development)
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Email settings
+EMAIL_BACKEND = 'core.email_backends.CustomEmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.example.com')
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_SSL_KEYFILE = None
+EMAIL_SSL_CERTFILE = None
+EMAIL_HOST_USER = env('EMAIL_HOST_USER') # Keep env for sensitive info
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD') # Keep env for sensitive info
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@mechresq.com')
 
 # Django-allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
@@ -171,4 +180,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY')
 OPENROUTER_API_KEY = env('OPENROUTER_API_KEY')
 CHATBOT_MODEL = env('CHATBOT_MODEL', default='google/gemini-pro')
+BASE_URL = env('BASE_URL', default='http://localhost:8000') # New: Base URL for absolute links in emails
+
+# Firebase Configuration (add your Firebase project's config here)
+# These should be loaded from environment variables for security
+FIREBASE_CONFIG = {
+    "apiKey": env('FIREBASE_API_KEY'),
+    "authDomain": env('FIREBASE_AUTH_DOMAIN'),
+    "projectId": env('FIREBASE_PROJECT_ID'),
+    "storageBucket": env('FIREBASE_STORAGE_BUCKET'),
+    "messagingSenderId": env('FIREBASE_MESSAGING_SENDER_ID'),
+    "appId": env('FIREBASE_APP_ID'),
+    "measurementId": env('FIREBASE_MEASUREMENT_ID', default=None), # Optional
+    "databaseURL": env('FIREBASE_DATABASE_URL', default=None), # For Realtime Database
+}
 # OPENAI_API_KEY = env('OPENAI_API_KEY') # Removed as per user's clarification

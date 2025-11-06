@@ -3,18 +3,9 @@
 
 {% block content %}
 <div class="dashboard-layout">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-2">
-                {% include 'includes/mechanic_sidebar.html' %}
-            </div>
-            <div class="col-10">
-                <main class="dashboard-main">
-                    {% block main_content %}{% endblock %}
-                </main>
-            </div>
-        </div>
-    </div>    
+<main class="dashboard-main">
+    {% block main_content %}{% endblock %}
+</main>
 </div>
 {% endblock %}
 
@@ -22,14 +13,18 @@
 <style>
     .dashboard-layout {
         display: flex;
-        min-height: calc(100vh - 60px);
+        min-height: 100vh; /* Use 100vh as sidebar is fixed height */
         background-color: #f8fafc;
+        padding-top: 70px; /* Account for fixed navbar height */
     }
 
     .dashboard-main {
         flex: 1;
-        padding: 2rem;
+        padding: 0.5rem; /* Reduced padding to minimize gap */
         overflow-y: auto;
+        width: 100%;
+        max-width: 100%; /* Ensure it doesn't exceed available width */
+        /* Removed display: flex, justify-content: center, align-items: flex-start to allow content to take full width */
     }
 
     @media (max-width: 768px) {
@@ -43,4 +38,4 @@
     }
 </style>
 {% block page_css %}{% endblock %}
-{% endblock %} 
+{% endblock %}

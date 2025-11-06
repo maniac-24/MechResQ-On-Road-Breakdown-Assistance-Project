@@ -3,126 +3,8 @@
 
 {% block title %}Reviews - Mechanic Dashboard{% endblock %}
 
-{% block page_css %}
-<style>
-    .reviews-container {
-        display: grid;
-        gap: 1.5rem;
-    }
-
-    .reviews-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-    }
-
-    .rating-summary {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .average-rating {
-        font-size: 3rem;
-        font-weight: 600;
-        color: #1e293b;
-        line-height: 1;
-    }
-
-    .rating-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .total-reviews {
-        color: #64748b;
-        font-size: 0.875rem;
-    }
-
-    .star-rating {
-        color: #f59e0b;
-        font-size: 1.25rem;
-    }
-
-    .reviews-list {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .review-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .review-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .review-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .reviewer-name {
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .review-date {
-        font-size: 0.875rem;
-        color: #64748b;
-    }
-
-    .review-rating {
-        color: #f59e0b;
-    }
-
-    .review-content {
-        color: #475569;
-        line-height: 1.5;
-    }
-
-    .service-info {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e2e8f0;
-        font-size: 0.875rem;
-        color: #64748b;
-    }
-
-    .no-reviews {
-        background: white;
-        border-radius: 12px;
-        padding: 3rem;
-        text-align: center;
-        color: #64748b;
-    }
-
-    .no-reviews-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        color: #e2e8f0;
-    }
-
-    @media (max-width: 768px) {
-        .reviews-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-    }
-</style>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reviews.css' %}">
 {% endblock %}
 
 {% block main_content %}
@@ -152,9 +34,19 @@
             {% for review in reviews %}
             <div class="review-card">
                 <div class="review-header">
-                    <div class="review-info">
-                        <div class="reviewer-name">{{ review.service_request.user.get_full_name }}</div>
-                        <div class="review-date">{{ review.created_at|date:"M d, Y" }}</div>
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                        <div class="reviewer-avatar">
+                            {% if review.service_request.user.profile_picture %}
+                                <img src="{{ review.service_request.user.profile_picture.url }}" 
+                                         alt="{{ review.service_request.user.get_full_name }}">
+                            {% else %}
+                                {{ review.service_request.user.get_full_name|first }}
+                            {% endif %}
+                        </div>
+                        <div class="review-info">
+                            <div class="reviewer-name">{{ review.service_request.user.get_full_name }}</div>
+                            <div class="review-date">{{ review.created_at|date:"M d, Y" }}</div>
+                        </div>
                     </div>
                     <div class="review-rating">
                         {% for i in "12345"|make_list %}
@@ -170,11 +62,11 @@
                     {{ review.comment }}
                 </div>
                 <div class="service-info">
-                    Service Request #{{ review.service_request.id }} - 
+                    <i class="fas fa-wrench"></i> Service Request #{{ review.service_request.id }} - 
                     {% if review.service_request.vehicle %}
-                        {{ review.service_request.vehicle.name }} ({{ review.service_request.vehicle.license_plate }})
+                        <i class="fas fa-car"></i> {{ review.service_request.vehicle.name }} ({{ review.service_request.vehicle.license_plate }})
                     {% else %}
-                        {{ review.service_request.vehicle_type }}
+                        <i class="fas fa-car"></i> {{ review.service_request.vehicle_type }}
                     {% endif %}
                 </div>
             </div>
@@ -188,4 +80,4 @@
         {% endif %}
     </div>
 </div>
-{% endblock %} 
+{% endblock main_content %}

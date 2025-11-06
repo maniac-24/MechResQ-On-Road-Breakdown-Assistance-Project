@@ -12,3 +12,4 @@ crispy-bootstrap4==2025.6
 googlemaps==4.10.0
 openai
 python-dotenv
+httpx

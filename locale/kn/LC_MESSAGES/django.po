@@ -1,0 +1,183 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-11 18:32+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: .\templates\profile\index.html:109
+#: .\templates\profile\mechanic_profile.html:200
+msgid "Profile Picture"
+msgstr ""
+
+#: .\templates\profile\index.html:115
+msgid "Mechanic"
+msgstr ""
+
+#: .\templates\profile\index.html:115
+msgid "User"
+msgstr ""
+
+#: .\templates\profile\index.html:123
+#: .\templates\profile\mechanic_profile.html:217
+msgid "Personal Information"
+msgstr ""
+
+#: .\templates\profile\index.html:126
+#: .\templates\profile\mechanic_profile.html:220
+msgid "First Name"
+msgstr ""
+
+#: .\templates\profile\index.html:130
+#: .\templates\profile\mechanic_profile.html:224
+msgid "Last Name"
+msgstr ""
+
+#: .\templates\profile\index.html:136
+msgid "Email Address"
+msgstr ""
+
+#: .\templates\profile\index.html:141
+#: .\templates\profile\mechanic_profile.html:232
+msgid "Phone Number"
+msgstr ""
+
+#: .\templates\profile\index.html:146
+#: .\templates\profile\mechanic_profile.html:236
+msgid "Address"
+msgstr ""
+
+#: .\templates\profile\index.html:150
+#: .\templates\profile\mechanic_profile.html:272
+msgid "Preferred Language"
+msgstr ""
+
+#: .\templates\profile\index.html:152
+#: .\templates\profile\mechanic_profile.html:274
+msgid "Language"
+msgstr ""
+
+#: .\templates\profile\index.html:164
+#: .\templates\profile\mechanic_profile.html:243
+msgid "Professional Information"
+msgstr ""
+
+#: .\templates\profile\index.html:167
+#: .\templates\profile\mechanic_profile.html:246
+msgid "Specialization"
+msgstr ""
+
+#: .\templates\profile\index.html:171
+#: .\templates\profile\mechanic_profile.html:250
+msgid "Years of Experience"
+msgstr ""
+
+#: .\templates\profile\index.html:177
+#: .\templates\profile\mechanic_profile.html:254
+msgid "Workshop Address"
+msgstr ""
+
+#: .\templates\profile\index.html:182
+msgid "Current Rating"
+msgstr ""
+
+#: .\templates\profile\index.html:198
+#: .\templates\profile\mechanic_profile.html:293
+msgid "Save Changes"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:5
+msgid "Profile Settings"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:5
+msgid "Mechanic Dashboard"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:202
+msgid "Default Profile Picture"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:211
+msgid "Years Experience"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:228
+msgid "Email"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:258
+msgid "Workshop Latitude"
+msgstr ""
+
+#: .\templates\profile\mechanic_profile.html:262
+msgid "Workshop Longitude"
+msgstr ""
+
+#: .\templates\registration\password_reset_email.html:2
+#, python-format
+msgid ""
+"You're receiving this email because you requested a password reset for your "
+"user account at %(site_name)s."
+msgstr ""
+
+#: .\templates\registration\password_reset_email.html:4
+msgid "Please go to the following page and choose a new password:"
+msgstr ""
+
+#: .\templates\registration\password_reset_email.html:8
+msgid "Your username, in case you’ve forgotten:"
+msgstr ""
+
+#: .\templates\registration\password_reset_email.html:10
+msgid "Thanks for using our site!"
+msgstr ""
+
+#: .\templates\registration\password_reset_email.html:12
+#, python-format
+msgid "The %(site_name)s team"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:108
+msgid "English"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:109
+msgid "Hindi"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:110
+msgid "Tamil"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:111
+msgid "Telugu"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:112
+msgid "Kannada"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:113
+msgid "Malayalam"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:114
+msgid "Marathi"
+msgstr ""
+
+#: .\vehicle_breakdown\settings.py:115
+msgid "Bengali"
+msgstr ""

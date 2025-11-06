@@ -6,15 +6,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Avg, Sum, Count
 from django.db.models.functions import TruncDay
+from decimal import Decimal
 from .models import User, Mechanic, ServiceRequest, Review, Payment, Notification, Vehicle, EmergencyRequest
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from math import radians, sin, cos, sqrt, atan2
 from .notification_views import get_unread_notifications_count
 from django.template.context_processors import request
-from .forms import ReviewForm
+from .forms import ReviewForm, UserProfileForm, MechanicProfileForm # Add UserProfileForm, MechanicProfileForm
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse # Added HttpResponse
 import json
 from django.db import models
 from django.contrib.auth import login as auth_login
@@ -23,6 +24,141 @@ from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from django.views.decorators.csrf import csrf_exempt # Added import for csrf_exempt
 import googlemaps # Import googlemaps library
+from django.contrib.auth.forms import PasswordResetForm
+from .forms import OtpForm, NewPasswordForm
+import random
+from django.utils import translation # Import translation module
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.urls import reverse # Import reverse for URL lookups
+def send_payment_receipt_email(payment):
+    service_request = payment.service_request
+    receipt_url = settings.BASE_URL + reverse('core:payment_receipt', args=[payment.id]) # Assuming BASE_URL is set in settings
+
+    subject = f"MechResQ Payment Receipt for Service Request #{service_request.id}"
+    html_message = render_to_string('emails/payment_receipt_email.html', {
+        'payment': payment,
+        'service_request': service_request,
+        'receipt_url': receipt_url,
+        'base_url': settings.BASE_URL,
+        'current_year': timezone.now().year,
+    })
+    plain_message = f"""
+    Dear {service_request.user.username},
+
+    Thank you for using MechResQ! Your payment for service request #{service_request.id} has been successfully processed.
+
+    Payment Details:
+    Service Request ID: {service_request.id}
+    Mechanic: {service_request.mechanic.user.get_full_name() if service_request.mechanic else 'N/A'}
+    Vehicle: {service_request.vehicle.make if service_request.vehicle else 'N/A'} {service_request.vehicle.model if service_request.vehicle else ''} ({service_request.vehicle.license_plate if service_request.vehicle else ''})
+    Issue: {service_request.issue_description}
+    Service Charge: Rs.{payment.service_charge}
+    Tax (18% GST): Rs.{payment.tax}
+    Total Amount Paid: Rs.{payment.total_amount}
+    Payment Method: {payment.get_payment_method_display()}
+    Transaction ID: {payment.transaction_id}
+    Paid At: {payment.paid_at}
+
+    You can view your full receipt here: {receipt_url}
+
+    Thank you,
+    The MechResQ Team
+    """
+    
+    try:
+        email = EmailMessage(
+            subject,
+            html_message,
+            settings.DEFAULT_FROM_EMAIL, # Sender email from settings
+            [service_request.user.email], # Recipient email
+        )
+        email.content_subtype = "html" # Main content is now HTML
+        email.send()
+        return True
+    except Exception as e:
+        print(f'Failed to send payment receipt email: {e}')
+        return False
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            try:
+                # Use filter().first() to avoid MultipleObjectsReturned if multiple users share an email.
+                # Ideally, email addresses should be unique for password reset functionality.
+                user = User.objects.filter(email=email).first()
+                if not user:
+                    raise User.DoesNotExist
+
+                otp = str(random.randint(100000, 999999))
+                request.session['otp'] = otp
+                request.session['email'] = email
+
+                # Send OTP to email
+                subject = "Password Reset OTP for MechResQ"
+                html_message = render_to_string('registration/password_reset_email.html', {
+                    'otp': otp,
+                    'user': user,
+                    'base_url': settings.BASE_URL, # Pass BASE_URL to the template
+                })
+                plain_message = f"Your OTP for password reset is: {otp}"
+                
+                try:
+                    email_message = EmailMessage(
+                        subject,
+                        html_message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                    )
+                    email_message.content_subtype = "html"
+                    email_message.send()
+                    messages.success(request, f"OTP sent successfully to {email}")
+                    return redirect('core:otp_verify')
+                except Exception as e:
+                    messages.error(request, f"Failed to send OTP email: {e}")
+                    return redirect('core:password_reset')
+            except User.DoesNotExist:
+                messages.error(request, "User with this email does not exist.")
+    else:
+        form = PasswordResetForm()
+    return render(request, 'registration/password_reset.html', {'form': form})
+
+def otp_verify(request):
+    if request.method == 'POST':
+        form = OtpForm(request.POST)
+        if form.is_valid():
+            otp_entered = form.cleaned_data['otp']
+            if otp_entered == request.session.get('otp'):
+                return redirect('core:password_reset_new_password')
+            else:
+                messages.error(request, "Invalid OTP.")
+    else:
+        form = OtpForm()
+    return render(request, 'registration/otp_verify.html', {'form': form})
+
+def password_reset_new_password(request):
+    if request.method == 'POST':
+        form = NewPasswordForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password']
+            email = request.session.get('email')
+            try:
+                user = User.objects.get(email=email)
+                user.set_password(new_password)
+                user.save()
+                # Clear session data
+                del request.session['otp']
+                del request.session['email']
+                messages.success(request, "Password has been reset successfully.")
+                return redirect('core:login')
+            except User.DoesNotExist:
+                messages.error(request, "An error occurred.")
+    else:
+        form = NewPasswordForm()
+    return render(request, 'registration/password_reset_new_password.html', {'form': form})
+
 
 def notification_context_processor(request):
     if request.user.is_authenticated:
@@ -151,7 +287,8 @@ def register_mechanic(request):
         mechanic_form = MechanicRegistrationForm()
     return render(request, 'registration/register_mechanic.html', {
         'user_form': user_form,
-        'mechanic_form': mechanic_form
+        'mechanic_form': mechanic_form,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
     })
 
 @login_required
@@ -190,7 +327,7 @@ def dashboard(request):
         service_requests = ServiceRequest.objects.filter(
             Q(mechanic=mechanic) | 
             Q(mechanic__isnull=True, status='PENDING')
-        ).order_by('-created_at')
+        ).select_related('payment').order_by('-created_at')
         
         # Calculate additional statistics
         total_services = ServiceRequest.objects.filter(mechanic=mechanic).count()
@@ -226,10 +363,24 @@ def dashboard(request):
             for item in service_trend
         ]
         
-        return render(request, 'dashboard/mechanic.html', {
+        cash_payment_requests = ServiceRequest.objects.filter(
+            mechanic=mechanic,
+            status='COMPLETED', # Changed from 'IN_PROGRESS' to 'COMPLETED'
+            payment__payment_method='CASH',
+            payment__payment_status='PENDING'
+        ).select_related('payment').order_by('-created_at')
+
+        # Find an active service request for the mechanic to track
+        active_mechanic_service_request = ServiceRequest.objects.filter(
+            mechanic=mechanic,
+            status__in=['ACCEPTED', 'IN_PROGRESS']
+        ).order_by('-updated_at').first()
+
+        context = {
             'mechanic': mechanic,
             'service_requests': service_requests,
-            'emergency_requests': emergency_requests, # Pass emergency requests to template
+            'emergency_requests': emergency_requests,
+            'cash_payment_requests': cash_payment_requests,
             'total_services': total_services,
             'completed_services': completed_services,
             'in_progress_services': in_progress_services,
@@ -237,17 +388,54 @@ def dashboard(request):
             'average_rating': average_rating,
             'service_trend': json.dumps(service_trend_data),
             'pending_requests_count': pending_requests_count,
-            'active_page': 'dashboard'
-        })
+            'active_page': 'dashboard',
+            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY, # Pass API key to mechanic dashboard
+            'firebase_config': json.dumps(settings.FIREBASE_CONFIG) if hasattr(settings, 'FIREBASE_CONFIG') and settings.FIREBASE_CONFIG else '{}', # Pass Firebase config as JSON string
+        }
+
+        if active_mechanic_service_request:
+            context['active_mechanic_service_request'] = {
+                'id': active_mechanic_service_request.id,
+                'user_latitude': active_mechanic_service_request.latitude,
+                'user_longitude': active_mechanic_service_request.longitude,
+                'mechanic_id': mechanic.id,
+                'mechanic_latitude': mechanic.latitude,
+                'mechanic_longitude': mechanic.longitude,
+                'status': active_mechanic_service_request.status,
+            }
+
+        return render(request, 'dashboard/mechanic.html', context)
     else:
         service_requests = ServiceRequest.objects.filter(user=request.user).order_by('-created_at')
         emergency_requests = EmergencyRequest.objects.filter(user=request.user).order_by('-created_at')
-        return render(request, 'dashboard/user.html', {
-            'service_requests': service_requests,
-            'emergency_requests': emergency_requests, # Pass emergency requests to user dashboard
-            'active_page': 'dashboard'
-        })
 
+        # Find an active service request for the user that has an assigned mechanic
+        active_tracking_request = ServiceRequest.objects.filter(
+            user=request.user,
+            mechanic__isnull=False,
+            status__in=['ACCEPTED', 'IN_PROGRESS']
+        ).order_by('-updated_at').first() # Get the most recently updated active request
+
+        context = {
+            'service_requests': service_requests,
+            'emergency_requests': emergency_requests,
+            'active_page': 'dashboard',
+            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY, # Pass API key to user dashboard
+            'firebase_config': json.dumps(settings.FIREBASE_CONFIG) if hasattr(settings, 'FIREBASE_CONFIG') and settings.FIREBASE_CONFIG else '{}', # Pass Firebase config as JSON string
+        }
+
+        if active_tracking_request:
+            context['active_tracking_request'] = {
+                'id': active_tracking_request.id,
+                'user_latitude': active_tracking_request.latitude,
+                'user_longitude': active_tracking_request.longitude,
+                'mechanic_id': active_tracking_request.mechanic.id,
+                'mechanic_latitude': active_tracking_request.mechanic_latitude,
+                'mechanic_longitude': active_tracking_request.mechanic_longitude,
+                'status': active_tracking_request.status,
+            }
+        
+        return render(request, 'dashboard/user.html', context)
 @login_required
 def service_request_detail(request, pk):
     service_request = get_object_or_404(ServiceRequest, pk=pk)
@@ -410,12 +598,21 @@ def find_nearby_mechanics(request, service_request_id):
     all_mechanics = Mechanic.objects.filter(available=True, latitude__isnull=False, longitude__isnull=False)
     
     for mechanic in all_mechanics:
+        # Ensure latitude and longitude are floats for calculation
+        mechanic_lat = float(mechanic.latitude)
+        mechanic_lng = float(mechanic.longitude)
+        service_lat = float(service_request.latitude)
+        service_lng = float(service_request.longitude)
+
         distance = calculate_distance(
-            service_request.latitude,
-            service_request.longitude,
-            mechanic.latitude,
-            mechanic.longitude
+            service_lat,
+            service_lng,
+            mechanic_lat,
+            mechanic_lng
         )
+        
+        print(f"Mechanic: {mechanic.user.username}, Lat: {mechanic_lat}, Lng: {mechanic_lng}, Distance to SR: {distance:.2f} km") # Debug print
+
         if distance <= 50:  # Within 50km radius
             nearby_mechanics.append({
                 'mechanic': mechanic,
@@ -427,27 +624,26 @@ def find_nearby_mechanics(request, service_request_id):
     # Initialize Google Maps client
     gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
     
-    # Define types of places to search for
-    place_types = ['gas_station', 'car_repair', 'car_dealer'] # Petrol bunks, automobile shops, towing services (car_repair/car_dealer for shops, towing not a direct type, but car_repair is close)
-    
-    nearby_places = []
-    for place_type in place_types:
-        places_result = gmaps.places_nearby(
-            location=(service_request.latitude, service_request.longitude),
-            radius=50000, # 50 km radius
-            type=place_type
-        )
-        for place in places_result.get('results', []):
+    # Use reverse_geocode to find nearby places
+    try:
+        reverse_geocode_result = gmaps.reverse_geocode((service_request.latitude, service_request.longitude))
+        
+        nearby_places = []
+        for result in reverse_geocode_result:
             # Filter out places without location or name
-            if 'geometry' in place and 'location' in place['geometry'] and 'name' in place:
+            if 'geometry' in result and 'location' in result['geometry'] and 'formatted_address' in result:
                 nearby_places.append({
-                    'name': place['name'],
-                    'lat': place['geometry']['location']['lat'],
-                    'lng': place['geometry']['location']['lng'],
-                    'type': place_type.replace('_', ' ').title(), # Format type for display
-                    'rating': place.get('rating', 'N/A'),
-                    'vicinity': place.get('vicinity', 'N/A')
+                    'name': result.get('formatted_address'),
+                    'lat': result['geometry']['location']['lat'],
+                    'lng': result['geometry']['location']['lng'],
+                    'type': ', '.join(result.get('types', [])), # Get place types
+                    'rating': result.get('rating', 'N/A'),
+                    'vicinity': result.get('vicinity', result.get('formatted_address'))
                 })
+    except googlemaps.exceptions.ApiError as e:
+        # Handle API errors gracefully
+        messages.error(request, f"Could not retrieve nearby places due to an API error: {e}")
+        nearby_places = []
 
     # Prepare mechanics data for JavaScript
     mechanics_json = json.dumps([
@@ -531,49 +727,57 @@ def vehicles(request):
 
 @login_required
 def profile(request):
-    if request.method == 'POST':
-        try:
-            user = request.user
-            user.first_name = request.POST.get('first_name', user.first_name)
-            user.last_name = request.POST.get('last_name', user.last_name)
-            user.email = request.POST.get('email', user.email)
-            user.phone_number = request.POST.get('phone_number', user.phone_number)
-            user.address = request.POST.get('address', user.address)
-            
-            # Handle profile picture upload
-            if 'profile_picture' in request.FILES:
-                user.profile_picture = request.FILES['profile_picture']
-            
-            user.save()
+    user = request.user
+    user_profile_form = None
+    mechanic_profile_form = None
 
-            # Update mechanic-specific fields if user is a mechanic
-            if user.is_mechanic:
-                mechanic = user.mechanic
-                mechanic.specialization = request.POST.get('specialization', mechanic.specialization)
-                mechanic.experience_years = request.POST.get('experience_years', mechanic.experience_years)
-                mechanic.workshop_address = request.POST.get('workshop_address', mechanic.workshop_address)
-                mechanic.latitude = request.POST.get('latitude', mechanic.latitude)
-                mechanic.longitude = request.POST.get('longitude', mechanic.longitude)
-                mechanic.save()
+    if request.method == 'POST':
+        user_profile_form = UserProfileForm(request.POST, request.FILES, instance=user)
+        if user.is_mechanic:
+            mechanic_profile_form = MechanicProfileForm(request.POST, instance=user.mechanic)
+
+        if user_profile_form.is_valid():
+            user_profile_form.save()
+            if user.is_mechanic and mechanic_profile_form and mechanic_profile_form.is_valid():
+                mechanic_profile_form.save()
             
+            # Activate the newly selected language
+            translation.activate(user.preferred_language)
+            request.session['django_language'] = user.preferred_language
+
             messages.success(request, 'Profile updated successfully!')
             return redirect('core:profile')
-        except Exception as e:
-            messages.error(request, f'Error updating profile: {str(e)}')
-            return redirect('core:profile')
+        else:
+            # Collect errors from both forms
+            all_errors = {}
+            for field, errors in user_profile_form.errors.items():
+                all_errors[field] = errors
+            if user.is_mechanic and mechanic_profile_form and not mechanic_profile_form.is_valid():
+                for field, errors in mechanic_profile_form.errors.items():
+                    all_errors[f'mechanic_{field}'] = errors # Prefix mechanic errors to avoid collision
+            
+            for field, errors in all_errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+
+    else: # GET request
+        user_profile_form = UserProfileForm(instance=user)
+        if user.is_mechanic:
+            mechanic_profile_form = MechanicProfileForm(instance=user.mechanic)
+
+    context = {
+        'user_profile_form': user_profile_form,
+        'mechanic_profile_form': mechanic_profile_form,
+        'user': user,
+        'mechanic': user.mechanic if user.is_mechanic else None,
+        'active_page': 'profile',
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    }
+
+    if user.is_mechanic:
+        return render(request, 'profile/mechanic_profile.html', context)
     
-    if request.user.is_mechanic:
-        return render(request, 'profile/mechanic_profile.html', {
-            'user': request.user,
-            'mechanic': request.user.mechanic,
-            'active_page': 'profile',
-            'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
-        })
-    
-    return render(request, 'profile/index.html', {
-        'user': request.user,
-        'active_page': 'profile'
-    })
+    return render(request, 'profile/index.html', context)
 
 @login_required
 def service_requests(request):
@@ -769,23 +973,31 @@ def update_mechanic_availability(request):
 @login_required
 def service_payment(request, service_id):
     service_request = get_object_or_404(ServiceRequest, id=service_id)
-    payment = get_object_or_404(Payment, service_request=service_request)
+    payment, created = Payment.objects.get_or_create(service_request=service_request, defaults={
+        'amount': service_request.estimated_cost, # Use estimated cost as default
+        'payment_method': 'CASH', # Default to cash if creating
+        'payment_status': 'PENDING' # Default to pending if creating
+    })
 
     if request.method == 'POST':
-        service_charge = float(request.POST.get('service_charge', 0))
-        tax = float(request.POST.get('tax', 0))
-        total_amount = float(request.POST.get('total_amount', 0))
         payment_method = request.POST.get('payment_method')
         transaction_id = request.POST.get('transaction_id')
         payment_proof = request.FILES.get('payment_proof')
 
+        # Ensure service_charge and tax are from the Payment object, not POST
+        # These should have been set when service_request.mark_as_completed() was called
+        service_charge = payment.service_charge
+        tax = payment.tax
+        total_amount = service_charge + tax # Recalculate total amount on backend
+
         # Update payment details
+        payment.amount = service_charge # Amount should be the service charge
         payment.service_charge = service_charge
         payment.tax = tax
         payment.total_amount = total_amount
         payment.payment_method = payment_method
-        payment.mechanic_share = service_charge * 0.80  # 80% to mechanic
-        payment.platform_fee = service_charge * 0.20    # 20% platform fee
+        payment.mechanic_share = service_charge * Decimal('0.80')  # 80% to mechanic
+        payment.platform_fee = service_charge * Decimal('0.20')    # 20% platform fee
 
         if payment_method == 'CASH':
             payment.payment_status = 'PENDING'
@@ -804,6 +1016,12 @@ def service_payment(request, service_id):
                 payment=payment
             )
             messages.success(request, 'Payment completed successfully!')
+            
+            # Send payment receipt email to user
+            if send_payment_receipt_email(payment):
+                messages.success(request, 'Payment receipt sent to your email!')
+            else:
+                messages.error(request, 'Failed to send payment receipt email.')
         
         payment.save()
         return redirect('core:service_request_detail', pk=service_id)
@@ -824,7 +1042,7 @@ def confirm_cash_payment(request, payment_id):
         messages.error(request, 'Only mechanics can confirm cash payments.')
         return redirect('core:dashboard')
 
-    payment = get_object_or_404(Payment, id=payment_id)
+    payment = get_object_or_404(Payment, id=payment_id, payment_method='CASH')
     service_request = payment.service_request
 
     if service_request.mechanic.user != request.user:
@@ -842,8 +1060,9 @@ def confirm_cash_payment(request, payment_id):
             payment=payment
         )
         messages.success(request, 'Cash payment confirmed successfully!')
-        return redirect('core:service_request_detail', pk=service_request.id)
-
+        return redirect('core:dashboard') # Redirect to mechanic dashboard
+    
+    # If GET request, render the confirmation page (though this might not be used with the new button)
     return render(request, 'service/confirm_cash_payment.html', {
         'payment': payment,
         'service_request': service_request,
@@ -861,25 +1080,73 @@ def payment_receipt(request, payment_id):
         messages.error(request, 'You do not have permission to view this receipt.')
         return redirect('core:dashboard')
 
-    return render(request, 'service/payment_receipt.html', {
+    # Check if user has permission to view this receipt
+    if not (request.user == service_request.user or 
+            (hasattr(request.user, 'mechanic') and service_request.mechanic == request.user.mechanic)):
+        messages.error(request, 'You do not have permission to view this receipt.')
+        return redirect('core:dashboard')
+
+    # Generate the full receipt URL for the email
+    receipt_url = request.build_absolute_uri(reverse('core:payment_receipt', args=[payment.id]))
+
+    if payment.payment_status == 'PAID':
+        if send_payment_receipt_email(payment):
+            messages.success(request, 'Payment receipt sent to your email!')
+        else:
+            messages.error(request, 'Failed to send payment receipt email.')
+
+    # Render the template content to a string
+    html_content = render_to_string('service/payment_receipt.html', {
         'payment': payment,
-        'service_request': service_request
-    })
+        'service_request': service_request,
+        'receipt_url': receipt_url, # Pass to template as well
+        'base_url': settings.BASE_URL, # Ensure base_url is available for static files if needed
+        'current_year': timezone.now().year, # Ensure current_year is available
+    }, request)
+
+    # Create an HttpResponse with the content
+    response = HttpResponse(html_content, content_type='text/html')
+    # Removed Content-Disposition to display receipt in browser instead of downloading
+    # response['Content-Disposition'] = f'attachment; filename="payment_receipt_{payment.id}.html"'
+    return response
 
 @login_required
 def payment_gateway(request, service_id):
     service_request = get_object_or_404(ServiceRequest, id=service_id)
+    # Retrieve the payment object, which should have been created by mark_as_completed
     payment = get_object_or_404(Payment, service_request=service_request)
     
     if request.method == 'POST':
-        context = {
-            'service_request': service_request,
-            'payment_method': request.POST.get('payment_method'),
-            'service_charge': request.POST.get('service_charge'),
-            'tax': request.POST.get('tax'),
-            'total_amount': request.POST.get('total_amount')
-        }
-        return render(request, 'service/payment_gateway.html', context)
+        payment_method = request.POST.get('payment_method')
+        
+        # Use the service_charge and tax already calculated and stored in the payment object
+        service_charge = payment.service_charge
+        tax = payment.tax
+        total_amount = service_charge + tax # Recalculate total amount on backend
+
+        # Update payment details
+        payment.amount = service_charge # Amount should be the service charge
+        payment.service_charge = service_charge
+        payment.tax = tax
+        payment.total_amount = total_amount
+        payment.payment_method = payment_method
+        payment.mechanic_share = service_charge * Decimal('0.80')
+        payment.platform_fee = service_charge * Decimal('0.20')
+        payment.payment_status = 'PENDING' # Always set to pending initially for cash flow
+        payment.save()
+        
+        if payment_method == 'CASH':
+            messages.info(request, 'Waiting for the mechanic to confirm your cash payment...')
+            return redirect('core:waiting_for_mechanic', service_id=service_request.id)
+        else:
+            context = {
+                'service_request': service_request,
+                'payment_method': payment_method,
+                'service_charge': service_charge,
+                'tax': tax,
+                'total_amount': total_amount
+            }
+            return render(request, 'service/payment_gateway.html', context)
     
     return redirect('core:service_request_detail', pk=service_id)
 
@@ -891,19 +1158,22 @@ def process_payment(request, service_id):
     service_request = get_object_or_404(ServiceRequest, id=service_id)
     payment = get_object_or_404(Payment, service_request=service_request)
     
-    # Get payment details from form
-    service_charge = float(request.POST.get('service_charge', 0))
-    tax = float(request.POST.get('tax', 0))
-    total_amount = float(request.POST.get('total_amount', 0))
+    # Get payment method from form
     payment_method = request.POST.get('payment_method')
     
+    # Use the service_charge and tax already calculated and stored in the payment object
+    service_charge = payment.service_charge
+    tax = payment.tax
+    total_amount = service_charge + tax # Recalculate total amount on backend
+
     # Update payment details
+    payment.amount = service_charge # Amount should be the service charge
     payment.service_charge = service_charge
     payment.tax = tax
     payment.total_amount = total_amount
     payment.payment_method = payment_method
-    payment.mechanic_share = service_charge * 0.80  # 80% to mechanic
-    payment.platform_fee = service_charge * 0.20    # 20% platform fee
+    payment.mechanic_share = service_charge * Decimal('0.80')  # 80% to mechanic
+    payment.platform_fee = service_charge * Decimal('0.20')    # 20% platform fee
     
     # For demonstration, we'll generate a random transaction ID
     import random
@@ -911,19 +1181,35 @@ def process_payment(request, service_id):
     transaction_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
     payment.transaction_id = transaction_id
     
-    # Mark payment as completed
-    payment.payment_status = 'PAID'
-    payment.paid_at = timezone.now()
-    payment.save()
-    
-    # Notify mechanic about payment completion
-    Notification.create_payment_notification(
-        recipient=service_request.mechanic.user,
-        payment=payment
-    )
-    
-    messages.success(request, 'Payment processed successfully!')
-    return redirect('core:service_request_detail', pk=service_id)
+    if payment_method == 'CASH':
+        payment.payment_status = 'PENDING'
+        payment.save()
+        messages.info(request, 'Waiting for the mechanic to confirm your cash payment...')
+        return render(request, 'service/confirm_cash_payment.html', {
+            'service_request': service_request,
+            'payment': payment,
+            'active_page': 'services'
+        })
+    else:
+        # Mark payment as completed
+        payment.payment_status = 'PAID'
+        payment.paid_at = timezone.now()
+        payment.save()
+        
+        # Notify mechanic about payment completion
+        Notification.create_payment_notification(
+            recipient=service_request.mechanic.user,
+            payment=payment
+        )
+        
+        # Send payment receipt email to user
+        if send_payment_receipt_email(payment):
+            messages.success(request, 'Payment receipt sent to your email!')
+        else:
+            messages.error(request, 'Failed to send payment receipt email.')
+        
+        messages.success(request, 'Payment processed successfully!')
+        return redirect('core:service_request_detail', pk=service_id)
 
 @login_required
 def assign_mechanic(request, service_request_id, mechanic_id):
@@ -938,20 +1224,23 @@ def assign_mechanic(request, service_request_id, mechanic_id):
         messages.warning(request, 'This service request is no longer pending.')
         return redirect('core:service_request_detail', pk=service_request_id)
 
+    # Assign the mechanic, but keep the status as PENDING for mechanic to accept
     service_request.mechanic = mechanic
-    service_request.status = 'ACCEPTED'
+    # service_request.status remains 'PENDING'
     service_request.save()
 
+    # Notify the selected mechanic about the new service request
+    Notification.create_service_request_notification(
+        recipient=mechanic.user,
+        service_request=service_request
+    )
+    # Notify the user that the mechanic has been notified
     Notification.create_status_update_notification(
         recipient=service_request.user,
         service_request=service_request
     )
-    Notification.create_status_update_notification(
-        recipient=mechanic.user,
-        service_request=service_request
-    )
-    messages.success(request, f'Mechanic {mechanic.user.get_full_name()} assigned to your request!')
-    return redirect('core:service_request_detail', pk=service_request_id)
+    messages.success(request, f'Mechanic {mechanic.user.get_full_name()} has been notified about your service request. They will review it shortly.')
+    return redirect('core:service_request_detail', pk=service_request.id) # Redirect back to service request detail page
 
 
 @login_required
@@ -1047,6 +1336,18 @@ def get_mechanic_location_for_service_request(request, service_request_id):
         return JsonResponse({'success': False, 'error': 'Mechanic not assigned or service not in progress.'}, status=404)
 
 
+@login_required
+def waiting_for_mechanic(request, service_id):
+    service = get_object_or_404(ServiceRequest, id=service_id, user=request.user)
+    payment = Payment.objects.filter(service_request=service).first()
+
+    # If mechanic already confirmed
+    if payment and payment.payment_status == 'PAID': # Changed from payment.status to payment.payment_status
+        return redirect('core:payment_receipt', payment.id) # Changed to payment_receipt as payment_success doesn't exist yet
+
+    # Otherwise show waiting page
+    return render(request, 'core/waiting_for_mechanic.html', {'service': service, 'payment': payment})
+
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -1056,7 +1357,27 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 auth_login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
+                
+                # Activate user's preferred language after login
+                translation.activate(user.preferred_language)
+                request.session['django_language'] = user.preferred_language
+
+                # Save FCM token if provided
+                fcm_token = request.POST.get('fcmToken')
+                if fcm_token:
+                    user.fcm_token = fcm_token
+                    user.save()
+                    
+                    # Send welcome notification
+                    from .firebase_admin_init import send_notification
+                    send_notification(
+                        fcm_token=fcm_token,
+                        title=f"Welcome {user.username}!",
+                        body="You have successfully logged in to MechResQ."
+                    )
+
+                # Store message in session to display as alert after redirect
+                request.session['welcome_message'] = f'Welcome back, {username}!'
                 return redirect('core:dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
@@ -1083,3 +1404,28 @@ def get_location_history(request, mechanic_id):
         ]
     }
     return JsonResponse(data)
+
+@login_required
+def delete_service_request(request, pk):
+    service_request = get_object_or_404(ServiceRequest, pk=pk)
+
+    # Check if the user has permission to delete this request
+    if not (request.user == service_request.user or
+            (hasattr(request.user, 'mechanic') and request.user.mechanic == service_request.mechanic)):
+        messages.error(request, 'You do not have permission to delete this service request.')
+        return redirect('core:dashboard')
+
+    if request.method == 'POST':
+        service_request.delete()
+        messages.success(request, 'Service request history deleted successfully.')
+        
+        if request.user.is_mechanic:
+            return redirect('core:service_history') # Redirect to mechanic history
+        else:
+            return redirect('core:service_history') # Redirect to user history
+            
+    messages.error(request, 'Invalid request method for deletion.')
+    return redirect('core:dashboard')
+
+def custom_map_view(request):
+    return render(request, 'map.html', {'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY})

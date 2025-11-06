@@ -4,21 +4,43 @@
 {% block extra_css %}
 <style>
     .dashboard-content {
-        padding: 2rem;
+        padding: 2rem 2rem 2rem 0; /* Top, Right, Bottom, Left */
     }
 
     .profile-card {
-        background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        max-width: 800px; /* Limit the width of the profile card */
+        margin: 0 auto; /* Center the profile card */
+    }
+
+    .profile-card:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
     }
 
     .profile-header {
-        background: linear-gradient(135deg, #3498db, #2980b9);
-        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #6dd5ed, #2193b0); /* A softer, more modern blue gradient */
+        padding: 3.5rem 2rem;
         text-align: center;
         color: #fff;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(30deg);
+        opacity: 0.2;
     }
 
     .profile-picture-wrapper {
@@ -39,18 +61,32 @@
 
     .profile-picture-edit {
         position: absolute;
-        bottom: 0;
-        right: 0;
-        background: #fff;
+        bottom: 5px;
+        right: 5px;
+        background: #007bff; /* A more prominent color */
+        color: #fff;
         border-radius: 50%;
-        padding: 0.5rem;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 0.6rem;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
         cursor: pointer;
         transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
     }
 
     .profile-picture-edit:hover {
         transform: scale(1.1);
+        background: #0056b3; /* Darker blue on hover */
+    }
+
+    .profile-picture-wrapper {
+        transition: transform 0.3s ease;
+    }
+
+    .profile-picture-wrapper:hover {
+        transform: translateY(-5px); /* Slight lift on hover */
     }
 
     .profile-name {
@@ -69,23 +105,37 @@
     }
 
     .info-label {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-bottom: 0.4rem;
+        font-weight: 500;
     }
 
     .info-value {
-        font-size: 1rem;
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
+        color: #34495e;
+        margin-bottom: 1.6rem;
+        font-weight: 600;
     }
 
     .section-title {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
         color: #2c3e50;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f8f9fa;
+        margin-bottom: 1.8rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 2px solid #ecf0f1;
+        font-weight: 700;
+        position: relative;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        width: 60px;
+        height: 2px;
+        background-color: #007bff;
     }
 
     @media (max-width: 768px) {
@@ -94,11 +144,127 @@
             padding: 1rem;
         }
     }
+
+    /* Custom Select Styles */
+    .custom-select-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .custom-select-trigger {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        padding-right: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        height: calc(1.5em + 0.75rem + 2px); /* Match form-control height */
+        background-color: #fff;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .custom-select-trigger:focus,
+    .custom-select-trigger:active {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .custom-select-trigger .dropdown-arrow {
+        transition: transform 0.3s ease;
+    }
+
+    .custom-select-trigger.active .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .custom-options {
+        display: none;
+        position: absolute;
+        top: calc(100% + 5px); /* Slightly below the trigger */
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        padding: 0.5rem 0;
+        height: auto !important;
+        max-height: 250px !important; /* Add a max-height for scrollability */
+        overflow-y: auto !important; /* Enable scrolling */
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .custom-options.show {
+        display: block;
+    }
+
+    .custom-options .form-check {
+        padding: 0.6rem 1.2rem;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .custom-options .form-check:hover {
+        background-color: #f8f9fa;
+    }
+
+    .custom-options .form-check-input {
+        margin-right: 0.75rem;
+        transform: scale(1.1); /* Slightly larger radio buttons */
+    }
+
+    /* Add new styles for form-control focus and general input styling */
+    .form-control {
+        border-radius: 0.375rem;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+
+    .form-control:hover {
+        border-color: #a0a0a0; /* Subtle border change on hover */
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+        transform: translateY(-2px); /* Slight lift on hover */
+        box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* Keyframe for fade-in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-{% include 'components/sidebar.html' with active_page='profile' %}
+{% include 'components/navbar.html' with active_page='profile' %}
 
 <div class="main-wrapper">
     <div class="dashboard-content">
@@ -146,6 +312,79 @@
                         <textarea class="form-control" id="address" name="address" rows="3" required>{{ user.address }}</textarea>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Mode:</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="themeMode" id="lightModeRadio" value="light">
+                                <label class="form-check-label" for="lightModeRadio">
+                                    Light Mode
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="themeMode" id="darkModeRadio" value="dark">
+                                <label class="form-check-label" for="darkModeRadio">
+                                    Dark Mode
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="preferredLanguage" class="form-label">Preferred Language</label>
+                        <div class="custom-select-wrapper">
+                            <div class="form-control custom-select-trigger" id="customPreferredLanguage">
+                                {{ user.get_preferred_language_display|default:"Select Language" }}
+                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                            </div>
+                            <div class="custom-options" id="preferredLanguageOptions">
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langEnglish">English</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langEnglish" value="en" {% if user.preferred_language == 'en' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langHindi">Hindi</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langHindi" value="hi" {% if user.preferred_language == 'hi' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langKannada">Kannada</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langKannada" value="kn" {% if user.preferred_language == 'kn' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langMalayalam">Malayalam</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langMalayalam" value="ml" {% if user.preferred_language == 'ml' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langMarathi">Marathi</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langMarathi" value="mr" {% if user.preferred_language == 'mr' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langTamil">Tamil</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langTamil" value="ta" {% if user.preferred_language == 'ta' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langTelugu">Telugu</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langTelugu" value="te" {% if user.preferred_language == 'te' %}checked{% endif %}>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label" for="langBengali">Bengali</label>
+                                    <input class="form-check-input" type="radio" name="preferred_language" id="langBengali" value="bn" {% if user.preferred_language == 'bn' %}checked{% endif %}>
+                                </div>
+                            </div>
+                            <!-- Hidden select to hold the actual value for form submission -->
+                            <select class="form-control d-none" id="preferredLanguageHidden" name="preferred_language">
+                                <option value="en" {% if user.preferred_language == 'en' %}selected{% endif %}>English</option>
+                                <option value="hi" {% if user.preferred_language == 'hi' %}selected{% endif %}>Hindi</option>
+                                <option value="kn" {% if user.preferred_language == 'kn' %}selected{% endif %}>Kannada</option>
+                                <option value="ml" {% if user.preferred_language == 'ml' %}selected{% endif %}>Malayalam</option>
+                                <option value="mr" {% if user.preferred_language == 'mr' %}selected{% endif %}>Marathi</option>
+                                <option value="ta" {% if user.preferred_language == 'ta' %}selected{% endif %}>Tamil</option>
+                                <option value="te" {% if user.preferred_language == 'te' %}selected{% endif %}>Telugu</option>
+                                <option value="bn" {% if user.preferred_language == 'bn' %}selected{% endif %}>Bengali</option>
+                            </select>
+                        </div>
+                    </div>
+
                     {% if user.is_mechanic %}
                     <h3 class="section-title">Professional Information</h3>
                     <div class="row">
@@ -180,7 +419,7 @@
                     {% endif %}
 
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary w-100 py-2">
                             <i class="fas fa-save me-2"></i>Save Changes
                         </button>
                     </div>
@@ -189,9 +428,22 @@
         </div>
     </div>
 </div>
+
+<div id="django-messages" data-messages='
+    {% if messages %}
+        [
+        {% for message in messages %}
+            "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        ]
+    {% else %}
+        []
+    {% endif %}
+'></div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/theme-toggle.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const profilePictureInput = document.getElementById('profilePictureInput');
@@ -210,10 +462,56 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Show success/error messages
-{% if messages %}
-    {% for message in messages %}
-        alert('{{ message }}');
-    {% endfor %}
-{% endif %}
+const messagesElement = document.getElementById('django-messages');
+if (messagesElement) {
+    const messages = JSON.parse(messagesElement.dataset.messages);
+    messages.forEach(msg => {
+        alert(msg);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const customSelectTrigger = document.getElementById('customPreferredLanguage');
+    const customOptions = document.getElementById('preferredLanguageOptions');
+    const hiddenSelect = document.getElementById('preferredLanguageHidden');
+    const radioButtons = customOptions.querySelectorAll('input[type="radio"][name="preferred_language"]');
+
+    customSelectTrigger.addEventListener('click', function() {
+        customOptions.classList.toggle('show');
+        customSelectTrigger.classList.toggle('active');
+    });
+
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Find the label associated with this radio button
+            const label = customOptions.querySelector(`label[for="${this.id}"]`);
+            if (label) {
+                customSelectTrigger.textContent = label.textContent;
+                customSelectTrigger.appendChild(document.createElement('i')).className = 'fas fa-chevron-down dropdown-arrow';
+            }
+            hiddenSelect.value = this.value;
+            customOptions.classList.remove('show');
+            customSelectTrigger.classList.remove('active');
+        });
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!customSelectTrigger.contains(e.target) && !customOptions.contains(e.target)) {
+            customOptions.classList.remove('show');
+            customSelectTrigger.classList.remove('active');
+        }
+    });
+
+    // Initialize display with current selected value
+    const selectedRadio = customOptions.querySelector('input[type="radio"][name="preferred_language"]:checked');
+    if (selectedRadio) {
+        const label = customOptions.querySelector(`label[for="${selectedRadio.id}"]`);
+        if (label) {
+            customSelectTrigger.textContent = label.textContent;
+            customSelectTrigger.appendChild(document.createElement('i')).className = 'fas fa-chevron-down dropdown-arrow';
+        }
+    }
+});
 </script>
-{% endblock %} 
+{% endblock %}

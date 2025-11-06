@@ -404,15 +404,21 @@
         map = new google.maps.Map(document.getElementById("map"), {
             center: defaultLocation,
             zoom: 13,
-            disableDefaultUI: true, // Disable all default UI buttons
-            gestureHandling: "none", // Disable map dragging
-            zoomControl: false, // Remove zoom controls
+            mapTypeControl: true, // Enable map type control (Map/Satellite)
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+                position: google.maps.ControlPosition.TOP_RIGHT,
+            },
+            streetViewControl: false, // Disable street view
+            fullscreenControl: false, // Disable fullscreen control
+            zoomControl: true, // Enable zoom controls
+            gestureHandling: "greedy", // Allow map dragging
         });
 
         marker = new google.maps.Marker({
             position: defaultLocation,
             map: map,
-            draggable: false,
+            draggable: true, // Make marker draggable
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 fillColor: '#007bff',
@@ -421,6 +427,14 @@
                 strokeWeight: 3,
                 scale: 10,
             },
+        });
+
+        // Update location fields when marker is dragged
+        marker.addListener('dragend', function() {
+            const newLat = marker.getPosition().lat();
+            const newLng = marker.getPosition().lng();
+            updateLocationFields(newLat, newLng);
+            reverseGeocode(newLat, newLng);
         });
 
         // Initialize autocomplete

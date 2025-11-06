@@ -16,7 +16,7 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
-                        <h2 class="mb-0">On Road Vehicle Breakdown</h2>
+                        <h2 class="mb-0">MechResQ-On Road Vehicle Breakdown</h2>
                         <p class="text-muted mb-0">Emergency Vehicle Assistance</p>
                     </div>
 
@@ -120,16 +120,20 @@
         .sidebar,
         .mobile-toggle,
         .btn.btn-light, /* Hide the "Print Receipt" button itself */
-        .text-center.mt-4 /* Hide "Back to Service Details" button */
+        .text-center.mt-4, /* Hide "Back to Service Details" button */
+        .navbar, /* Hide the entire navbar */
+        .navbar-brand, /* Hide the logo specifically */
+        .navbar-toggler /* Hide the hamburger icon */
          {
             display: none !important;
         }
 
-        /* Adjust content wrapper for full width */
+        /* Adjust content wrapper for full width and remove header height adjustment */
         .content-wrapper {
             margin-left: 0 !important;
             width: 100% !important;
             padding: 0 !important; /* Remove padding from content wrapper */
+            min-height: 100vh !important; /* Occupy full viewport height */
         }
 
         /* Set A4 paper size and margins */
@@ -184,4 +188,5 @@
         .pt-4 { padding-top: 0.5rem !important; }
     }
 </style>
+
 {% endblock %}

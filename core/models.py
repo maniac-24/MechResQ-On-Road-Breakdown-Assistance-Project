@@ -3,6 +3,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from decimal import Decimal
+from django.conf import settings # Import settings
+
+# Define language choices based on settings.LANGUAGES
+LANGUAGE_CHOICES = settings.LANGUAGES
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
@@ -83,6 +87,8 @@ class User(AbstractUser):
         null=True, 
         blank=True
     )
+    fcm_token = models.CharField(max_length=255, blank=True, null=True, verbose_name="FCM Token for Push Notifications")
+    preferred_language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en') # New field
     
     def get_profile_picture_url(self):
         if self.profile_picture and hasattr(self.profile_picture, 'url'):
@@ -101,6 +107,7 @@ class Mechanic(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     rating = models.FloatField(default=0.0)
     base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
+    preferred_language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en') # New field
 
     def __str__(self):
         return f"{self.user.username} - {self.specialization}"
