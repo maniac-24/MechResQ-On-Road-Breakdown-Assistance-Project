@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Payment Receipt</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+        .container { width: 100%; position: relative; }
+        .header { background: #28a745; color: #fff; padding: 12px; }
+        .brand {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .brand img { height: 28px; }
+        .title { display: inline-block; vertical-align: middle; margin-left: 10px; font-size: 16px; font-weight: bold; }
+        .subtitle { color: #e9f7ee; font-size: 11px; margin-left: 38px; }
+        .section { padding: 10px 12px; }
+        .muted { color: #666; }
+        .row { width: 100%; }
+        .col-6 { width: 48%; display: inline-block; vertical-align: top; }
+        .right { text-align: right; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #f5f5f5; }
+        .totals td { font-weight: bold; }
+        .mb-6 { margin-bottom: 6px; }
+
+        /* Watermark (works in many cases; support depends on xhtml2pdf) */
+        .watermark {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-20deg);
+            opacity: 0.08;
+            z-index: 0;
+        }
+        .content { position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Background watermark logo -->
+        <div class="watermark">
+            <img src="{{ base_url }}/static/images/MechResQ_logo.png" alt="Logo" width="420" />
+        </div>
+
+        <div class="content">
+            <div class="header">
+                <div class="brand"><img src="{{ base_url }}/static/images/MechResQ_logo.png" alt="Logo" /></div>
+                <div class="title">Payment Receipt</div>
+                <div class="subtitle">MechResQ - On Road Vehicle Breakdown</div>
+            </div>
+
+            <div class="section">
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-6"><strong>Customer Details</strong></div>
+                    <div class="mb-6"><strong>Name:</strong> {{ service_request.user.get_full_name }}</div>
+                    <div class="mb-6"><strong>Phone:</strong> {{ service_request.user.phone_number }}</div>
+                    <div class="mb-6"><strong>Address:</strong> {{ service_request.user.address }}</div>
+                </div>
+                <div class="col-6 right">
+                    <div class="mb-6"><strong>Receipt Details</strong></div>
+                    <div class="mb-6"><strong>Receipt No:</strong> #{{ payment.id }}</div>
+                    <div class="mb-6"><strong>Date:</strong> {{ payment.paid_at|date:"F j, Y, g:i a" }}</div>
+                    <div class="mb-6"><strong>Status:</strong> {{ payment.get_payment_status_display }}</div>
+                </div>
+            </div>
+            </div>
+
+            <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th class="right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Service Charge</td>
+                        <td class="right">₹{{ payment.service_charge }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tax (18% GST)</td>
+                        <td class="right">₹{{ payment.tax }}</td>
+                    </tr>
+                    <tr class="totals">
+                        <td>Total Amount</td>
+                        <td class="right">₹{{ payment.total_amount }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+
+            <div class="section">
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-6"><strong>Service Details</strong></div>
+                    <div class="mb-6"><strong>Service ID:</strong> #{{ service_request.id }}</div>
+                    <div class="mb-6"><strong>Vehicle Type:</strong> {{ service_request.vehicle_type }}</div>
+                    <div class="mb-6"><strong>Issue:</strong> {{ service_request.issue_description|truncatechars:100 }}</div>
+                    <div class="mb-6"><strong>Location:</strong> {{ service_request.location }}</div>
+                    {% if service_request.estimated_cost %}
+                    <div class="mb-6"><strong>Estimated Cost:</strong> ₹{{ service_request.estimated_cost }}</div>
+                    {% endif %}
+                    {% if service_request.final_cost %}
+                    <div class="mb-6"><strong>Final Cost:</strong> ₹{{ service_request.final_cost }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-6 right">
+                    <div class="mb-6"><strong>Payment Information</strong></div>
+                    <div class="mb-6"><strong>Payment Method:</strong> {{ payment.get_payment_method_display }}</div>
+                    {% if payment.transaction_id %}
+                    <div class="mb-6"><strong>Transaction ID:</strong> {{ payment.transaction_id }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            </div>
+
+            <div class="section">
+            <div class="row">
+                <div class="col-6"><strong>Mechanic:</strong> {{ service_request.mechanic.user.get_full_name }}</div>
+                <div class="col-6 right muted">Thank you for your business!</div>
+            </div>
+            </div>
+
+            <div class="section" style="text-align:center; color:#777; font-size: 11px;">
+            &copy; {{ current_year }} MechResQ. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -68,7 +68,13 @@
                             <p class="mb-1"><strong>Service ID:</strong> #{{ service_request.id }}</p>
                             <p class="mb-1"><strong>Vehicle Type:</strong> {{ service_request.vehicle_type }}</p>
                             <p class="mb-1"><strong>Issue:</strong> {{ service_request.issue_description|truncatechars:100 }}</p>
-                            <p class="mb-0"><strong>Location:</strong> {{ service_request.location }}</p>
+                            <p class="mb-1"><strong>Location:</strong> {{ service_request.location }}</p>
+                            {% if service_request.estimated_cost %}
+                            <p class="mb-1"><strong>Estimated Cost:</strong> ₹{{ service_request.estimated_cost }}</p>
+                            {% endif %}
+                            {% if service_request.final_cost %}
+                            <p class="mb-0"><strong>Final Cost:</strong> ₹{{ service_request.final_cost }}</p>
+                            {% endif %}
                         </div>
                         <div class="col-md-6 text-md-end">
                             <h5 class="text-muted mb-3">Payment Information</h5>

@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/emergency/<int:emergency_request_id>/accept/', views.accept_emergency_request, name='accept_emergency_request'), # New API endpoint
     path('api/mechanic/update-availability/', views.update_mechanic_availability, name='update_mechanic_availability'),
     path('api/mechanic/update-location/', views.update_mechanic_location, name='update_mechanic_location'),
+    path('api/mechanic/<int:mechanic_id>/details/', views.mechanic_details, name='mechanic_details'),
     path('api/service-request/<int:service_request_id>/mechanic-location/', views.get_mechanic_location_for_service_request, name='get_mechanic_location_for_service_request'),
     
     # Mechanic Dashboard

@@ -290,22 +290,28 @@ class ServiceRequest(models.Model):
             self.status = 'COMPLETED'
             self.completed_at = timezone.now()
             
-            # Calculate payment details
-            service_charge = self.calculate_service_charge()
+            # Calculate payment details preferring final or estimated cost
+            base_amount = (
+                self.final_cost if self.final_cost is not None
+                else (self.estimated_cost if self.estimated_cost is not None else self.calculate_service_charge())
+            )
+            service_charge = Decimal(base_amount)
             tax = self.calculate_tax(service_charge)
             total_amount = service_charge + tax
             mechanic_share = self.calculate_mechanic_share(service_charge)
             platform_fee = service_charge - mechanic_share
 
-            # Create payment record
-            Payment.objects.create(
+            # Create or update payment record to avoid duplication
+            Payment.objects.update_or_create(
                 service_request=self,
-                amount=service_charge,
-                service_charge=service_charge,
-                tax=tax,
-                total_amount=total_amount,
-                mechanic_share=mechanic_share,
-                platform_fee=platform_fee
+                defaults={
+                    'amount': service_charge,
+                    'service_charge': service_charge,
+                    'tax': tax,
+                    'total_amount': total_amount,
+                    'mechanic_share': mechanic_share,
+                    'platform_fee': platform_fee,
+                }
             )
             self.save()
 

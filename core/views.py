@@ -31,6 +31,8 @@ from django.utils import translation # Import translation module
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import reverse # Import reverse for URL lookups
+import io
+from xhtml2pdf import pisa
 def send_payment_receipt_email(payment):
     service_request = payment.service_request
     receipt_url = settings.BASE_URL + reverse('core:payment_receipt', args=[payment.id]) # Assuming BASE_URL is set in settings
@@ -70,10 +72,21 @@ def send_payment_receipt_email(payment):
         email = EmailMessage(
             subject,
             html_message,
-            settings.DEFAULT_FROM_EMAIL, # Sender email from settings
-            [service_request.user.email], # Recipient email
+            settings.DEFAULT_FROM_EMAIL,
+            [service_request.user.email],
         )
-        email.content_subtype = "html" # Main content is now HTML
+        email.content_subtype = "html"
+        pdf_html = render_to_string('service/payment_receipt_pdf.html', {
+            'payment': payment,
+            'service_request': service_request,
+            'base_url': settings.BASE_URL,
+            'current_year': timezone.now().year,
+        })
+        pdf_buffer = io.BytesIO()
+        pisa.CreatePDF(pdf_html, dest=pdf_buffer)
+        pdf_data = pdf_buffer.getvalue()
+        pdf_buffer.close()
+        email.attach(f"payment_receipt_{payment.id}.pdf", pdf_data, 'application/pdf')
         email.send()
         return True
     except Exception as e:
@@ -724,6 +737,48 @@ def find_nearby_mechanics(request, service_request_id):
     })
 
 @login_required
+def mechanic_details(request, mechanic_id):
+    mechanic = get_object_or_404(Mechanic, pk=mechanic_id)
+    # Aggregate ratings across all reviews for this mechanic
+    agg = Review.objects.filter(service_request__mechanic=mechanic).aggregate(
+        average=Avg('rating'), total=Count('id')
+    )
+    avg_rating = round(agg['average'] or 0, 2)
+    total_reviews = agg['total'] or 0
+
+    recent_reviews_qs = (
+        Review.objects
+        .filter(service_request__mechanic=mechanic)
+        .select_related('service_request__user')
+        .order_by('-created_at')[:5]
+    )
+    recent_reviews = []
+    for r in recent_reviews_qs:
+        reviewer = r.service_request.user
+        recent_reviews.append({
+            'rating': r.rating,
+            'comment': r.comment,
+            'created_at': r.created_at.strftime('%Y-%m-%d %H:%M'),
+            'reviewer': reviewer.get_full_name() or reviewer.username,
+        })
+
+    data = {
+        'id': mechanic.id,
+        'name': mechanic.user.get_full_name() or mechanic.user.username,
+        'specialization': mechanic.specialization,
+        'experience_years': mechanic.experience_years,
+        'workshop_address': mechanic.workshop_address,
+        'available': mechanic.available,
+        'rating': float(mechanic.rating or 0),
+        'average_rating': float(avg_rating),
+        'total_reviews': total_reviews,
+        'base_fee': float(mechanic.base_fee),
+        'preferred_language': mechanic.preferred_language,
+        'recent_reviews': recent_reviews,
+    }
+    return JsonResponse(data)
+
+@login_required
 def service_history(request):
     if request.user.is_mechanic:
         # Get all service requests for the mechanic
@@ -1037,10 +1092,32 @@ def service_payment(request, service_id):
         messages.error(request, 'You do not have permission to access this payment.')
         return redirect('core:dashboard')
     payment, created = Payment.objects.get_or_create(service_request=service_request, defaults={
-        'amount': service_request.estimated_cost, # Use estimated cost as default
-        'payment_method': 'CASH', # Default to cash if creating
-        'payment_status': 'PENDING' # Default to pending if creating
+        'amount': service_request.estimated_cost,
+        'payment_method': 'CASH',
+        'payment_status': 'PENDING'
     })
+
+    # Ensure payment amounts reflect final/estimated cost consistently
+    try:
+        base_amount = (
+            service_request.final_cost if service_request.final_cost is not None
+            else (service_request.estimated_cost if service_request.estimated_cost is not None else service_request.calculate_service_charge())
+        )
+        base_amount = Decimal(base_amount)
+        if payment.service_charge != base_amount or payment.total_amount in (None, 0):
+            tax = service_request.calculate_tax(base_amount)
+            total_amount = base_amount + tax
+            mechanic_share = service_request.calculate_mechanic_share(base_amount)
+            platform_fee = base_amount - mechanic_share
+            payment.amount = base_amount
+            payment.service_charge = base_amount
+            payment.tax = tax
+            payment.total_amount = total_amount
+            payment.mechanic_share = mechanic_share
+            payment.platform_fee = platform_fee
+            payment.save()
+    except Exception:
+        pass
 
     if request.method == 'POST':
         payment_method = request.POST.get('payment_method')
@@ -1145,11 +1222,7 @@ def payment_receipt(request, payment_id):
     # Generate the full receipt URL for the email
     receipt_url = request.build_absolute_uri(reverse('core:payment_receipt', args=[payment.id]))
 
-    if payment.payment_status == 'PAID':
-        if send_payment_receipt_email(payment):
-            messages.success(request, 'Payment receipt sent to your email!')
-        else:
-            messages.error(request, 'Failed to send payment receipt email.')
+    # Do not trigger email sending here to avoid duplicate emails/attachments
 
     # Render the template content to a string
     html_content = render_to_string('service/payment_receipt.html', {

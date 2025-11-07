@@ -68,7 +68,13 @@
                             <h5>{{ mechanic_data.mechanic.user.get_full_name }}</h5>
                             <p>Specialization: {{ mechanic_data.mechanic.specialization }}</p>
                             <p class="distance">{{ mechanic_data.distance }} km away</p>
-<a href="{% url 'core:assign_mechanic' service_request.id mechanic_data.mechanic.id %}" class="btn btn-sm btn-primary mt-2">Select Mechanic</a>
+                            <a href="{% url 'core:assign_mechanic' service_request.id mechanic_data.mechanic.id %}" class="btn btn-sm btn-primary mt-2">Select Mechanic</a>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary mt-2 ms-2 btn-view-details"
+                                    data-mechanic-id="{{ mechanic_data.mechanic.id }}"
+                                    data-details-url="{% url 'core:mechanic_details' mechanic_data.mechanic.id %}">
+                                View Details
+                            </button>
                         </div>
                     {% endfor %}
                 {% else %}
@@ -85,6 +91,24 @@
     </script>
     <div class="text-center mt-4">
 <a href="{% url 'core:service_request_detail' service_request.id %}" class="btn btn-secondary">Back to Request Details</a>
+    </div>
+
+    <!-- Mechanic Details Modal -->
+    <div class="modal fade" id="mechanicDetailsModal" tabindex="-1" aria-labelledby="mechanicDetailsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mechanicDetailsLabel">Mechanic Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="mechanicDetailsBody">
+                    <div class="text-center py-3">Loading...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -213,6 +237,95 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // View Details modal wiring
+        const detailsModalEl = document.getElementById('mechanicDetailsModal');
+        const detailsModal = new bootstrap.Modal(detailsModalEl);
+        const detailsTitle = document.getElementById('mechanicDetailsLabel');
+        const detailsBody = document.getElementById('mechanicDetailsBody');
+
+        function renderDetails(data) {
+            const availability = data.available ? 'Available' : 'Unavailable';
+            const avgRating = (data.average_rating || 0).toFixed(2);
+            const reviewsHtml = (data.recent_reviews || []).length
+                ? data.recent_reviews.map(r => `
+                    <div class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>${r.reviewer}</strong>
+                            <span><i class="fas fa-star text-warning"></i> ${r.rating}</span>
+                        </div>
+                        <small class="text-muted">${r.created_at}</small>
+                        <div>${r.comment || ''}</div>
+                    </div>
+                `).join('')
+                : '<div class="text-muted">No reviews yet.</div>';
+
+            detailsBody.innerHTML = `
+                <div class="mb-2">
+                    <div class="d-flex align-items-center mb-1">
+                        <h5 class="me-2 mb-0">${data.name}</h5>
+                        <span class="badge ${data.available ? 'bg-success' : 'bg-secondary'}">${availability}</span>
+                    </div>
+                    <div class="text-muted">${data.specialization}</div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="p-2 border rounded">
+                            <div class="text-uppercase small text-muted">Avg Rating</div>
+                            <div><i class="fas fa-star text-warning"></i> ${avgRating} (${data.total_reviews} reviews)</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded">
+                            <div class="text-uppercase small text-muted">Base Fee</div>
+                            <div>₹ ${data.base_fee.toFixed ? data.base_fee.toFixed(2) : data.base_fee}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded">
+                            <div class="text-uppercase small text-muted">Experience</div>
+                            <div>${data.experience_years} years</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded">
+                            <div class="text-uppercase small text-muted">Language</div>
+                            <div>${data.preferred_language?.toUpperCase?.() || data.preferred_language || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-uppercase small text-muted">Workshop Address</div>
+                    <div>${data.workshop_address || 'N/A'}</div>
+                </div>
+                <div>
+                    <div class="text-uppercase small text-muted mb-1">Recent Reviews</div>
+                    ${reviewsHtml}
+                </div>
+            `;
+        }
+
+        document.querySelectorAll('.btn-view-details').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const url = this.dataset.detailsUrl;
+                detailsTitle.textContent = 'Mechanic Details';
+                detailsBody.innerHTML = '<div class="text-center py-3">Loading...</div>';
+                detailsModal.show();
+                fetch(url)
+                    .then(r => {
+                        if (!r.ok) throw new Error('Failed to load details');
+                        return r.json();
+                    })
+                    .then(data => {
+                        renderDetails(data);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        detailsBody.innerHTML = '<div class="text-danger">Failed to load mechanic details.</div>';
+                    });
+            });
+        });
+
         // Handle clicks on mechanic cards to center map on their location
         document.querySelectorAll('.mechanic-card').forEach(card => {
             card.addEventListener('click', function() {

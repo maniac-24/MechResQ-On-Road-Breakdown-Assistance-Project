@@ -13,3 +13,4 @@ googlemaps==4.10.0
 openai
 python-dotenv
 httpx
+xhtml2pdf==0.2.15

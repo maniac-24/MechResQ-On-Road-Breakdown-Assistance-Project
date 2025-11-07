@@ -238,7 +238,13 @@
                     <p class="mb-1"><strong>Service ID:</strong> #{{ service_request.id }}</p>
                     <p class="mb-1"><strong>Vehicle Type:</strong> {{ service_request.vehicle.make }} {{ service_request.vehicle.model }} ({{ service_request.vehicle.license_plate }})</p>
                     <p class="mb-1"><strong>Issue:</strong> {{ service_request.issue_description|truncatechars:100 }}</p>
-                    <p class="mb-0"><strong>Location:</strong> {{ service_request.location }}</p>
+                    <p class="mb-1"><strong>Location:</strong> {{ service_request.location }}</p>
+                    {% if service_request.estimated_cost %}
+                    <p class="mb-1"><strong>Estimated Cost:</strong> ₹{{ service_request.estimated_cost }}</p>
+                    {% endif %}
+                    {% if service_request.final_cost %}
+                    <p class="mb-0"><strong>Final Cost:</strong> ₹{{ service_request.final_cost }}</p>
+                    {% endif %}
                 </div>
                 <div class="col-md-6 text-md-end">
                     <h5 class="text-muted mb-3">Payment Information</h5>
@@ -256,9 +262,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-                <a href="{{ base_url }}{% url 'core:payment_receipt' payment.id %}" style="display: inline-block; background-color: #28a745; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">Download Receipt</a>
-            </div>
+            <p class="text-muted" style="text-align:center;">A PDF copy of your receipt is attached to this email.</p>
 
             <p>If you have any questions, please don't hesitate to contact us.</p>
             <p>Thank you,<br>The MechResQ Team</p>
