@@ -34,6 +34,13 @@
         background-repeat: no-repeat;
     }
 
+    .vehicle-image-img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+    }
+
     .vehicle-info {
         padding: 1.5rem;
     }
@@ -174,7 +181,11 @@
             {% for vehicle in vehicles %}
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="vehicle-card">
-                    <div class="vehicle-image" style="background-image: url('{% if vehicle.image %}{{ vehicle.image.url }}{% else %}{% static 'images/default-vehicle.jpg' %}{% endif %}');"></div>
+                    {% if vehicle.image %}
+                    <img class="vehicle-image-img" src="{{ vehicle.image.url }}" alt="{{ vehicle.name }}" />
+                    {% else %}
+                    <img class="vehicle-image-img" src="{% static 'images/default-vehicle.jpg' %}" alt="{{ vehicle.name }}" />
+                    {% endif %}
                     <div class="vehicle-info">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0">{{ vehicle.name }}</h5>
@@ -282,17 +293,6 @@
     </div>
 </div>
 
-<div id="django-messages" data-messages='
-    {% if messages %}
-        [
-        {% for message in messages %}
-            "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
-        {% endfor %}
-        ]
-    {% else %}
-        []
-    {% endif %}
-'></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -317,13 +317,6 @@ function editVehicle(vehicleId) {
     console.log('Edit vehicle:', vehicleId);
 }
 
-// Show success/error messages
-const messagesElement = document.getElementById('django-messages');
-if (messagesElement) {
-    const messages = JSON.parse(messagesElement.dataset.messages);
-    messages.forEach(msg => {
-        alert(msg);
-    });
-}
+// Messages are auto-shown via global modal in base.html (showStatus)
 </script>
 {% endblock %}

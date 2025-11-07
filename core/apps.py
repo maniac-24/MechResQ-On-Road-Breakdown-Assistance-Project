@@ -5,9 +5,6 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        # Import Firebase Admin SDK initialization
-        import core.firebase_admin_init
-        
         # Import template tags when the app is ready
         from django.template.defaulttags import register
         try:

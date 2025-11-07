@@ -429,17 +429,6 @@
     </div>
 </div>
 
-<div id="django-messages" data-messages='
-    {% if messages %}
-        [
-        {% for message in messages %}
-            "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
-        {% endfor %}
-        ]
-    {% else %}
-        []
-    {% endif %}
-'></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -461,14 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Show success/error messages
-const messagesElement = document.getElementById('django-messages');
-if (messagesElement) {
-    const messages = JSON.parse(messagesElement.dataset.messages);
-    messages.forEach(msg => {
-        alert(msg);
-    });
-}
+// Messages are auto-shown via global modal in base.html (showStatus)
 
 document.addEventListener('DOMContentLoaded', function() {
     const customSelectTrigger = document.getElementById('customPreferredLanguage');

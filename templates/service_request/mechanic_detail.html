@@ -311,7 +311,7 @@
                         document.getElementById('route-eta').textContent = route.duration.text;
                         document.getElementById('route-info').style.display = 'block';
                     } else {
-                        window.alert("Directions request failed due to " + status);
+                        showStatus("Directions request failed due to " + status, 'error');
                     }
                 }
             );

@@ -17,7 +17,7 @@ def mark_notification_read(request, notification_id):
         notification.read = True
         notification.save()
         messages.success(request, 'Notification marked as read.')
-    return redirect('notifications')
+    return redirect('core:notifications')
 
 def get_unread_notifications_count(user):
     return Notification.objects.filter(recipient=user, read=False).count()

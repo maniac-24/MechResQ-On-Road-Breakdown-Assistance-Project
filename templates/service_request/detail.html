@@ -231,14 +231,14 @@
                                                 paymentForm.addEventListener('submit', function(e) {
                                                     if (!serviceChargeInput.value) {
                                                         e.preventDefault();
-                                                        alert('Please enter the service charge');
+                                                        showStatus('Please enter the service charge', 'warning');
                                                         return;
                                                     }
                                                     
                                                     const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
                                                     if (!selectedMethod) {
                                                         e.preventDefault();
-                                                        alert('Please select a payment method');
+                                                        showStatus('Please select a payment method', 'warning');
                                                         return;
                                                     }
                                                 });

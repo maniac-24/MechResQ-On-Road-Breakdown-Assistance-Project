@@ -94,7 +94,6 @@
                             </div>
                             <a href="{% url 'core:password_reset' %}" class="text-decoration-none text-primary">Forgot Password?</a>
                         </div>
-                        <input type="hidden" name="fcmToken" id="fcmTokenInput">
                         <button type="submit" class="btn btn-primary w-100 mb-4 py-2">
                             <i class="fas fa-sign-in-alt me-2"></i>Login
                         </button>
@@ -127,22 +126,6 @@
                 form.classList.add('was-validated');
             }, false);
         });
-
-        // Get FCM token and set it in the hidden input field
-        if (typeof messaging !== 'undefined') {
-            messaging.getToken({ vapidKey: "BKRbhLLAnVot5DK2wAgdZlC4nvoP0N0oYe8GADJCx5gLq-opYp2DX1sbwmlrIYNW33WLMpq01Gm_tK8HVYI50ws" }).then((token) => {
-                if (token) {
-                    document.getElementById('fcmTokenInput').value = token;
-                    console.log("FCM Token set in login form:", token);
-                } else {
-                    console.log("No FCM token available.");
-                }
-            }).catch((err) => {
-                console.error("Error retrieving FCM token for login form:", err);
-            });
-        } else {
-            console.warn("Firebase Messaging not initialized. FCM token will not be sent with login.");
-        }
     });
     </script>
 </body>

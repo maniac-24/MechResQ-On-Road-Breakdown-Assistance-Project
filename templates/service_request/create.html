@@ -445,7 +445,7 @@
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             if (!place.geometry) {
-                window.alert("No details available for input: '" + place.name + "'");
+                showStatus("No details available for input: '" + place.name + "'", 'warning');
                 return;
             }
 
@@ -466,7 +466,7 @@
                 document.querySelector('.submit-btn').disabled = false;
             } else {
                 console.error("Invalid coordinates from Google Places Autocomplete:", place.geometry.location);
-                window.alert("Invalid location selected. Please try again.");
+                showStatus("Invalid location selected. Please try again.", 'warning');
             }
         });
 
@@ -518,7 +518,7 @@
                         locationError.style.display = 'block';
                         locationObtained = false;
                         submitBtn.disabled = true;
-                        window.alert("Unable to get valid live location. Please try again.");
+                        showStatus("Unable to get valid live location. Please try again.", 'error');
                     }
                 },
                 (error) => {
@@ -532,7 +532,7 @@
                 options
             );
         } else {
-            alert('Geolocation is not supported by your browser');
+            showStatus('Geolocation is not supported by your browser', 'warning');
             submitBtn.disabled = true;
         }
     }
@@ -582,10 +582,10 @@
                         document.querySelector('.submit-btn').disabled = false;
                     } else {
                         console.error("Invalid coordinates from Geocoder search:", results[0].geometry.location);
-                        alert('Geocode was not successful for the following reason: Invalid coordinates.');
+                        showStatus('Geocode was not successful: Invalid coordinates.', 'error');
                     }
                 } else {
-                    alert('Geocode was not successful for the following reason: ' + status);
+                    showStatus('Geocode was not successful: ' + status, 'error');
                 }
             });
         });
@@ -648,7 +648,7 @@
         document.getElementById('serviceRequestForm').addEventListener('submit', function(e) {
             if (!locationObtained) {
                 e.preventDefault();
-                alert('Please obtain your live location before submitting the request.');
+                showStatus('Please obtain your live location before submitting the request.', 'warning');
                 return;
             }
 

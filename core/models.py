@@ -32,8 +32,12 @@ class Notification(models.Model):
 
     @classmethod
     def create_service_request_notification(cls, recipient, service_request):
-        title = f"New Service Request #{service_request.id}"
-        message = f"A new service request has been created for {service_request.vehicle_type}."
+        if getattr(recipient, 'is_mechanic', False):
+            title = "New Request Received"
+            message = "A new service request is available near your area."
+        else:
+            title = "Request Created Successfully"
+            message = "Your service request has been created successfully."
         return cls.objects.create(
             recipient=recipient,
             notification_type='SERVICE_REQUEST',
@@ -43,8 +47,25 @@ class Notification(models.Model):
 
     @classmethod
     def create_status_update_notification(cls, recipient, service_request):
-        title = f"Status Update for Request #{service_request.id}"
-        message = f"Your service request status has been updated to {service_request.status}."
+        status = service_request.status
+        if status == 'PENDING':
+            title = "Request Under Review"
+            message = "Your request is being reviewed by our team."
+        elif status == 'ACCEPTED':
+            title = "Mechanic Accepted Request"
+            message = "A mechanic has accepted your request! They will contact you soon."
+        elif status == 'IN_PROGRESS':
+            title = "Mechanic On The Way"
+            message = "Your assigned mechanic is en route to your location."
+        elif status == 'COMPLETED':
+            title = "Service Completed Successfully"
+            message = "Your service has been completed successfully. Please provide feedback."
+        elif status == 'CANCELLED':
+            title = "Request Cancelled"
+            message = "Your service request has been cancelled."
+        else:
+            title = f"Status Update for Request #{service_request.id}"
+            message = f"Your service request status has been updated to {service_request.status}."
         return cls.objects.create(
             recipient=recipient,
             notification_type='STATUS_UPDATE',
@@ -54,8 +75,27 @@ class Notification(models.Model):
 
     @classmethod
     def create_payment_notification(cls, recipient, payment):
-        title = f"Payment Update for Request #{payment.service_request.id}"
-        message = f"Payment of ${payment.amount} has been {payment.payment_status}."
+        status = payment.payment_status
+        if getattr(recipient, 'is_mechanic', False):
+            if status == 'PAID':
+                title = "Payment Received Successfully"
+                message = "Payment for your last service has been credited to your wallet."
+            elif status == 'FAILED':
+                title = "Payment Failed"
+                message = "User’s payment for a completed service has failed."
+            else:
+                title = f"Payment Update for Request #{payment.service_request.id}"
+                message = "Payment status has been updated."
+        else:
+            if status == 'PAID':
+                title = "Payment Successful"
+                message = "Your payment was processed securely."
+            elif status == 'FAILED':
+                title = "Payment Failed"
+                message = "Payment failed. Please try again or use another method."
+            else:
+                title = f"Payment Update for Request #{payment.service_request.id}"
+                message = "Payment status has been updated."
         return cls.objects.create(
             recipient=recipient,
             notification_type='PAYMENT',
@@ -65,10 +105,107 @@ class Notification(models.Model):
 
     @classmethod
     def create_review_notification(cls, recipient, review):
-        title = f"New Review for Request #{review.service_request.id}"
-        message = f"You received a {review.rating}-star review."
+        if getattr(recipient, 'is_mechanic', False):
+            title = "User Feedback Received"
+            message = "You’ve received feedback from a recent service."
+        else:
+            title = f"New Review for Request #{review.service_request.id}"
+            message = f"You received a {review.rating}-star review."
         return cls.objects.create(
             recipient=recipient,
+            notification_type='REVIEW',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_profile_updated_notification(cls, recipient):
+        if getattr(recipient, 'is_mechanic', False):
+            title = "Profile Updated Successfully"
+            message = "Your profile information has been updated."
+        else:
+            title = "Profile Updated Successfully"
+            message = "Your profile details have been updated."
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='STATUS_UPDATE',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_password_changed_notification(cls, recipient):
+        if getattr(recipient, 'is_mechanic', False):
+            title = "Password Changed Successfully"
+            message = "Your account password has been updated."
+        else:
+            title = "Password Changed Successfully"
+            message = "Your password has been updated for account security."
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='STATUS_UPDATE',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_welcome_notification(cls, recipient):
+        if getattr(recipient, 'is_mechanic', False):
+            title = f"Welcome {recipient.get_full_name()}!"
+            message = "Welcome back to MechResQ! Ready to assist stranded users."
+        else:
+            title = f"Welcome {recipient.get_full_name()}!"
+            message = "Welcome back! We’re ready to assist you."
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='STATUS_UPDATE',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_logout_notification(cls, recipient):
+        title = "Logout Successful"
+        message = "You’ve logged out safely. See you again soon!"
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='STATUS_UPDATE',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_feedback_submitted_notification(cls, recipient):
+        title = "Feedback Submitted"
+        message = "Thanks for your valuable feedback!"
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='REVIEW',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_invoice_generated_notification(cls, recipient, payment):
+        if getattr(recipient, 'is_mechanic', False):
+            title = "Invoice Generated"
+            message = "Invoice for this service has been generated and sent to the user."
+        else:
+            title = "Invoice Generated"
+            message = "Invoice generated for your completed service. Check your email."
+        return cls.objects.create(
+            recipient=recipient,
+            notification_type='PAYMENT',
+            title=title,
+            message=message
+        )
+
+    @classmethod
+    def create_rating_updated_notification(cls, mechanic):
+        title = "Rating Updated"
+        message = "Your average rating has been updated."
+        return cls.objects.create(
+            recipient=mechanic.user,
             notification_type='REVIEW',
             title=title,
             message=message

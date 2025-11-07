@@ -9,7 +9,7 @@ urlpatterns = [
     path('register/', views.register_user, name='register'),
     path('register/mechanic/', views.register_mechanic, name='register_mechanic'),
     path('login/', views.login_view, name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='core:login'), name='logout'),
+    path('logout/', views.logout_view, name='logout'),
     
     # Service Request URLs
     path('service-requests/', views.service_requests, name='service_requests'),

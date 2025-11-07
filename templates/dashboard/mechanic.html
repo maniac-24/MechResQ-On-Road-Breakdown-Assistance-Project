@@ -379,20 +379,20 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
+                    showStatus(data.message, 'success');
                     location.reload();
                 } else {
-                    alert('Error accepting emergency request: ' + data.error);
+                    showStatus('Error accepting emergency request: ' + data.error, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while accepting the emergency request.');
+                showStatus('An error occurred while accepting the emergency request.', 'error');
             });
         }
     }
 
-    // Mechanic Location Tracking (Firebase Realtime Database)
+    // Mechanic Location Tracking (via Django backend only)
     const activeMechanicServiceRequestScript = document.getElementById('active_mechanic_service_request_data');
     let activeMechanicServiceRequest = null;
     if (activeMechanicServiceRequestScript) {
@@ -402,19 +402,10 @@
             console.error("Error parsing active_mechanic_service_request_data:", e);
         }
     }
-
-    let firebaseDatabase; // Firebase Realtime Database instance
     let watchId; // To store the ID of the geolocation watchPosition
 
-    // Initialize Firebase Realtime Database if config is available
-    if (firebase && firebase.database) {
-        firebaseDatabase = firebase.database();
-    } else {
-        console.error("Firebase Realtime Database not initialized. Check Firebase SDK loading in base.html.");
-    }
-
     // Start continuous location tracking if there's an active service request
-    if (activeMechanicServiceRequest && firebaseDatabase) {
+    if (activeMechanicServiceRequest) {
         startMechanicLocationTracking(activeMechanicServiceRequest.mechanic_id);
     } else {
         const statusDiv = document.getElementById('mechanicTrackingStatus');
@@ -442,27 +433,9 @@
             (position) => {
                 const latitude = position.coords.latitude;
                 const longitude = position.coords.longitude;
-
-                // Path in Firebase Realtime Database to update mechanic's location
-                const mechanicLocationRef = firebaseDatabase.ref(`mechanic_locations/${mechanicId}`);
-                
-                // Update Firebase with the new location
-                mechanicLocationRef.set({
-                    latitude: latitude,
-                    longitude: longitude,
-                    timestamp: new Date().toISOString()
-                })
-                .then(() => {
-                    if (statusDiv) statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-map-marker-alt me-1"></i> Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}</span>`;
-                    console.log(`Mechanic ${mechanicId} location updated to Firebase: ${latitude}, ${longitude}`);
-                })
-                .catch((error) => {
-                    if (statusDiv) statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Error updating location to Firebase.</span>';
-                    console.error("Error writing mechanic location to Firebase:", error);
-                });
-
-                // Also send to Django backend for database persistence (LocationHistory and ServiceRequest updates)
+                // Send to Django backend for database persistence (LocationHistory and ServiceRequest updates)
                 sendLocationToDjango(latitude, longitude);
+                if (statusDiv) statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-map-marker-alt me-1"></i> Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}</span>`;
             },
             (error) => {
                 if (statusDiv) statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Error tracking location: ${error.message}</span>`;

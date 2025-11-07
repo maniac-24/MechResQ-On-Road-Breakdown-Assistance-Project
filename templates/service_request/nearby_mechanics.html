@@ -172,7 +172,7 @@
 
         places.forEach(place => {
             let iconUrl;
-            if (place.type && place.type.toLowerCase().includes('gas station') || place.type.toLowerCase().includes('petrol bunk')) {
+            if (place.type && (place.type.toLowerCase().includes('gas station') || place.type.toLowerCase().includes('petrol bunk'))) {
                 iconUrl = "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
             } else if (place.type && (place.type.toLowerCase().includes('car repair') || place.type.toLowerCase().includes('car dealer') || place.type.toLowerCase().includes('automobile shop'))) {
                 iconUrl = "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
@@ -279,7 +279,7 @@
                     fitMapToBounds();
                 } else {
                     console.error('Places search failed:', status);
-                    alert('Could not find any places for your search.');
+                    showStatus('Could not find any places for your search.', 'warning');
                 }
             });
         }

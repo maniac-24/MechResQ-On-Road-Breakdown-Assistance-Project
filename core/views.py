@@ -12,13 +12,13 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from math import radians, sin, cos, sqrt, atan2
 from .notification_views import get_unread_notifications_count
-from django.template.context_processors import request
 from .forms import ReviewForm, UserProfileForm, MechanicProfileForm # Add UserProfileForm, MechanicProfileForm
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse # Added HttpResponse
 import json
 from django.db import models
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout
 from django.contrib.auth.forms import AuthenticationForm
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
@@ -148,6 +148,7 @@ def password_reset_new_password(request):
                 user = User.objects.get(email=email)
                 user.set_password(new_password)
                 user.save()
+                Notification.create_password_changed_notification(user)
                 # Clear session data
                 del request.session['otp']
                 del request.session['email']
@@ -250,6 +251,7 @@ def register_user(request):
             user.phone_number = form.cleaned_data['phone_number']
             user.address = form.cleaned_data['address']
             user.save()
+            Notification.create_welcome_notification(user)
             messages.success(request, 'Registration successful! Please login to continue.')
             return redirect('core:login')
         else:
@@ -268,6 +270,7 @@ def register_mechanic(request):
             user = user_form.save(commit=False)
             user.is_mechanic = True
             user.save()
+            Notification.create_welcome_notification(user)
             mechanic = mechanic_form.save(commit=False)
             mechanic.user = user
             mechanic.save()
@@ -308,7 +311,9 @@ def create_service_request(request):
                 service_request.estimated_cost = estimated_cost
             
             service_request.save()
-            messages.success(request, f'Service request created successfully! The estimated cost is Rs.{service_request.estimated_cost}.')
+            Notification.create_service_request_notification(recipient=request.user, service_request=service_request)
+            messages.success(request, 'Request Created Successfully — Your service request has been created successfully.')
+            messages.info(request, f'Estimated Cost — The estimated cost is Rs.{service_request.estimated_cost}.')
             return redirect('core:service_request_detail', pk=service_request.pk)
     else:
         form = ServiceRequestForm()
@@ -333,7 +338,7 @@ def dashboard(request):
         total_services = ServiceRequest.objects.filter(mechanic=mechanic).count()
         completed_services = ServiceRequest.objects.filter(mechanic=mechanic, status='COMPLETED').count()
         in_progress_services = ServiceRequest.objects.filter(mechanic=mechanic, status='IN_PROGRESS').count()
-        total_earnings = Payment.objects.filter(service_request__mechanic=mechanic).aggregate(total=Sum('amount'))['total'] or 0
+        total_earnings = Payment.objects.filter(service_request__mechanic=mechanic, payment_status='PAID').aggregate(total=Sum('mechanic_share'))['total'] or 0
         average_rating = Review.objects.filter(service_request__mechanic=mechanic).aggregate(Avg('rating'))['rating__avg'] or 0
         pending_requests_count = ServiceRequest.objects.filter(mechanic__isnull=True, status='PENDING').count()
         
@@ -390,7 +395,6 @@ def dashboard(request):
             'pending_requests_count': pending_requests_count,
             'active_page': 'dashboard',
             'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY, # Pass API key to mechanic dashboard
-            'firebase_config': json.dumps(settings.FIREBASE_CONFIG) if hasattr(settings, 'FIREBASE_CONFIG') and settings.FIREBASE_CONFIG else '{}', # Pass Firebase config as JSON string
         }
 
         if active_mechanic_service_request:
@@ -421,7 +425,6 @@ def dashboard(request):
             'emergency_requests': emergency_requests,
             'active_page': 'dashboard',
             'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY, # Pass API key to user dashboard
-            'firebase_config': json.dumps(settings.FIREBASE_CONFIG) if hasattr(settings, 'FIREBASE_CONFIG') and settings.FIREBASE_CONFIG else '{}', # Pass Firebase config as JSON string
         }
 
         if active_tracking_request:
@@ -463,7 +466,7 @@ def service_request_detail(request, pk):
                     recipient=service_request.user,
                     service_request=service_request
                 )
-                messages.success(request, 'Service request accepted successfully!')
+                messages.success(request, 'Request Accepted Successfully — You have accepted the service request. Contact the user to confirm details.')
             
             elif action == 'start' and service_request.status == 'ACCEPTED':
                 service_request.status = 'IN_PROGRESS'
@@ -472,7 +475,7 @@ def service_request_detail(request, pk):
                     recipient=service_request.user,
                     service_request=service_request
                 )
-                messages.success(request, 'Service started successfully!')
+                messages.success(request, 'Heading to User’s Location — You’re now marked as en route to the user’s location.')
             
             elif action == 'complete' and service_request.status == 'IN_PROGRESS':
                 service_request.mark_as_completed()  # This method will create the payment
@@ -485,7 +488,7 @@ def service_request_detail(request, pk):
                     recipient=service_request.user,
                     payment=service_request.payment
                 )
-                messages.success(request, 'Service completed successfully! Payment has been initiated.')
+                messages.success(request, 'Service Completed Successfully — You have marked this service as completed.')
             
             return redirect('core:service_request_detail', pk=service_request.pk)
         
@@ -495,10 +498,6 @@ def service_request_detail(request, pk):
             'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
         })
     
-    # Provide default coordinates if service_request.latitude or longitude are invalid
-    default_lat = 20.5937  # Center of India
-    default_lng = 78.9629
-
     # Provide default coordinates if service_request.latitude or longitude are invalid
     default_lat = 20.5937  # Center of India
     default_lng = 78.9629
@@ -560,9 +559,12 @@ def submit_review(request, service_request_id):
             # Update mechanic's rating
             mechanic = service_request.mechanic
             reviews = Review.objects.filter(service_request__mechanic=mechanic)
-            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
             mechanic.rating = round(avg_rating, 2) if avg_rating else 0
             mechanic.save()
+            Notification.create_feedback_submitted_notification(request.user)
+            Notification.create_review_notification(recipient=mechanic.user, review=review)
+            Notification.create_rating_updated_notification(mechanic)
             
             messages.success(request, 'Thank you! Your review has been submitted successfully.')
             return redirect('core:service_request_detail', pk=service_request_id)
@@ -596,6 +598,7 @@ def find_nearby_mechanics(request, service_request_id):
     nearby_mechanics = []
     # Filter mechanics to only include those with valid latitude and longitude
     all_mechanics = Mechanic.objects.filter(available=True, latitude__isnull=False, longitude__isnull=False)
+    all_with_distance = []
     
     for mechanic in all_mechanics:
         # Ensure latitude and longitude are floats for calculation
@@ -613,36 +616,89 @@ def find_nearby_mechanics(request, service_request_id):
         
         print(f"Mechanic: {mechanic.user.username}, Lat: {mechanic_lat}, Lng: {mechanic_lng}, Distance to SR: {distance:.2f} km") # Debug print
 
+        # Track all with distance for fallback
+        all_with_distance.append((mechanic, distance))
+
         if distance <= 50:  # Within 50km radius
             nearby_mechanics.append({
                 'mechanic': mechanic,
                 'distance': round(distance, 2)
             })
     
+    # Sort base list
     nearby_mechanics.sort(key=lambda x: x['distance'])
+
+    # Fallback: if none within 50 km, show nearest 10 mechanics overall
+    if not nearby_mechanics:
+        all_with_distance.sort(key=lambda t: t[1])
+        fallback = all_with_distance[:10]
+        nearby_mechanics = [
+            {
+                'mechanic': m,
+                'distance': round(d, 2)
+            }
+            for (m, d) in fallback
+        ]
+        
+        # Secondary fallback: if we still have no coordinates to calculate distances
+        if not nearby_mechanics and len(all_with_distance) == 0:
+            # Try with all mechanics (ignore availability) that have coordinates
+            any_mechanics_with_coords = Mechanic.objects.filter(latitude__isnull=False, longitude__isnull=False)
+            any_with_distance = []
+            for m in any_mechanics_with_coords:
+                try:
+                    d = calculate_distance(float(service_request.latitude), float(service_request.longitude), float(m.latitude), float(m.longitude))
+                    any_with_distance.append((m, d))
+                except Exception:
+                    continue
+            any_with_distance.sort(key=lambda t: t[1])
+            fallback_any = any_with_distance[:10]
+            nearby_mechanics = [
+                {
+                    'mechanic': m,
+                    'distance': round(d, 2)
+                }
+                for (m, d) in fallback_any
+            ]
+
+        # Tertiary fallback: attempt light geocoding for a few mechanics missing coords
+        if not nearby_mechanics:
+            try:
+                geolocator = Nominatim(user_agent="mechresq-app")
+                mechanics_missing = Mechanic.objects.filter(Q(latitude__isnull=True) | Q(longitude__isnull=True)).exclude(workshop_address__isnull=True).exclude(workshop_address__exact='')[:5]
+                geocoded = []
+                for m in mechanics_missing:
+                    try:
+                        loc = geolocator.geocode(m.workshop_address, timeout=5)
+                        if loc:
+                            m.latitude = loc.latitude
+                            m.longitude = loc.longitude
+                            m.save(update_fields=['latitude', 'longitude'])
+                            d = calculate_distance(float(service_request.latitude), float(service_request.longitude), float(m.latitude), float(m.longitude))
+                            geocoded.append((m, d))
+                    except Exception:
+                        continue
+                geocoded.sort(key=lambda t: t[1])
+                fallback_geo = geocoded[:10]
+                if fallback_geo:
+                    nearby_mechanics = [
+                        {
+                            'mechanic': m,
+                            'distance': round(d, 2)
+                        }
+                        for (m, d) in fallback_geo
+                    ]
+            except Exception:
+                pass
     
     # Initialize Google Maps client
-    gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+    gmaps = None
     
     # Use reverse_geocode to find nearby places
     try:
-        reverse_geocode_result = gmaps.reverse_geocode((service_request.latitude, service_request.longitude))
-        
         nearby_places = []
-        for result in reverse_geocode_result:
-            # Filter out places without location or name
-            if 'geometry' in result and 'location' in result['geometry'] and 'formatted_address' in result:
-                nearby_places.append({
-                    'name': result.get('formatted_address'),
-                    'lat': result['geometry']['location']['lat'],
-                    'lng': result['geometry']['location']['lng'],
-                    'type': ', '.join(result.get('types', [])), # Get place types
-                    'rating': result.get('rating', 'N/A'),
-                    'vicinity': result.get('vicinity', result.get('formatted_address'))
-                })
     except googlemaps.exceptions.ApiError as e:
         # Handle API errors gracefully
-        messages.error(request, f"Could not retrieve nearby places due to an API error: {e}")
         nearby_places = []
 
     # Prepare mechanics data for JavaScript
@@ -745,6 +801,7 @@ def profile(request):
             translation.activate(user.preferred_language)
             request.session['django_language'] = user.preferred_language
 
+            Notification.create_profile_updated_notification(user)
             messages.success(request, 'Profile updated successfully!')
             return redirect('core:profile')
         else:
@@ -953,6 +1010,7 @@ def mechanic_reviews(request):
     return render(request, 'dashboard/reviews.html', context)
 
 @login_required
+@csrf_exempt
 def update_mechanic_availability(request):
     if not hasattr(request.user, 'mechanic'):
         return JsonResponse({'success': False, 'error': 'Not a mechanic'}, status=403)
@@ -973,6 +1031,11 @@ def update_mechanic_availability(request):
 @login_required
 def service_payment(request, service_id):
     service_request = get_object_or_404(ServiceRequest, id=service_id)
+    # Permission: only the request owner or the assigned mechanic can view/process payments
+    if not (request.user == service_request.user or 
+            (hasattr(request.user, 'mechanic') and service_request.mechanic and service_request.mechanic.user == request.user)):
+        messages.error(request, 'You do not have permission to access this payment.')
+        return redirect('core:dashboard')
     payment, created = Payment.objects.get_or_create(service_request=service_request, defaults={
         'amount': service_request.estimated_cost, # Use estimated cost as default
         'payment_method': 'CASH', # Default to cash if creating
@@ -1055,10 +1118,9 @@ def confirm_cash_payment(request, payment_id):
         payment.save()
         
         # Notify user about payment confirmation
-        Notification.create_payment_notification(
-            recipient=service_request.user,
-            payment=payment
-        )
+        Notification.create_payment_notification(recipient=service_request.user, payment=payment)
+        Notification.create_invoice_generated_notification(recipient=service_request.user, payment=payment)
+        Notification.create_invoice_generated_notification(recipient=service_request.mechanic.user, payment=payment)
         messages.success(request, 'Cash payment confirmed successfully!')
         return redirect('core:dashboard') # Redirect to mechanic dashboard
     
@@ -1073,12 +1135,6 @@ def confirm_cash_payment(request, payment_id):
 def payment_receipt(request, payment_id):
     payment = get_object_or_404(Payment, id=payment_id)
     service_request = payment.service_request
-
-    # Check if user has permission to view this receipt
-    if not (request.user == service_request.user or 
-            (hasattr(request.user, 'mechanic') and service_request.mechanic == request.user.mechanic)):
-        messages.error(request, 'You do not have permission to view this receipt.')
-        return redirect('core:dashboard')
 
     # Check if user has permission to view this receipt
     if not (request.user == service_request.user or 
@@ -1115,6 +1171,11 @@ def payment_gateway(request, service_id):
     service_request = get_object_or_404(ServiceRequest, id=service_id)
     # Retrieve the payment object, which should have been created by mark_as_completed
     payment = get_object_or_404(Payment, service_request=service_request)
+    # Permission: only the request owner or the assigned mechanic can access gateway
+    if not (request.user == service_request.user or 
+            (hasattr(request.user, 'mechanic') and service_request.mechanic and service_request.mechanic.user == request.user)):
+        messages.error(request, 'You do not have permission to access this payment.')
+        return redirect('core:dashboard')
     
     if request.method == 'POST':
         payment_method = request.POST.get('payment_method')
@@ -1157,6 +1218,11 @@ def process_payment(request, service_id):
         
     service_request = get_object_or_404(ServiceRequest, id=service_id)
     payment = get_object_or_404(Payment, service_request=service_request)
+    # Permission: only the request owner or the assigned mechanic can process payments
+    if not (request.user == service_request.user or 
+            (hasattr(request.user, 'mechanic') and service_request.mechanic and service_request.mechanic.user == request.user)):
+        messages.error(request, 'You do not have permission to process this payment.')
+        return redirect('core:dashboard')
     
     # Get payment method from form
     payment_method = request.POST.get('payment_method')
@@ -1201,6 +1267,12 @@ def process_payment(request, service_id):
             recipient=service_request.mechanic.user,
             payment=payment
         )
+        Notification.create_payment_notification(
+            recipient=service_request.user,
+            payment=payment
+        )
+        Notification.create_invoice_generated_notification(recipient=service_request.user, payment=payment)
+        Notification.create_invoice_generated_notification(recipient=service_request.mechanic.user, payment=payment)
         
         # Send payment receipt email to user
         if send_payment_receipt_email(payment):
@@ -1358,26 +1430,11 @@ def login_view(request):
             if user is not None:
                 auth_login(request, user)
                 
-                # Activate user's preferred language after login
                 translation.activate(user.preferred_language)
                 request.session['django_language'] = user.preferred_language
 
-                # Save FCM token if provided
-                fcm_token = request.POST.get('fcmToken')
-                if fcm_token:
-                    user.fcm_token = fcm_token
-                    user.save()
-                    
-                    # Send welcome notification
-                    from .firebase_admin_init import send_notification
-                    send_notification(
-                        fcm_token=fcm_token,
-                        title=f"Welcome {user.username}!",
-                        body="You have successfully logged in to MechResQ."
-                    )
-
-                # Store message in session to display as alert after redirect
-                request.session['welcome_message'] = f'Welcome back, {username}!'
+                Notification.create_welcome_notification(user)
+                messages.success(request, f"Welcome {user.get_full_name() or user.username}! — Welcome back! We’re ready to assist you.")
                 return redirect('core:dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
@@ -1429,3 +1486,10 @@ def delete_service_request(request, pk):
 
 def custom_map_view(request):
     return render(request, 'map.html', {'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY})
+
+def logout_view(request):
+    if request.user.is_authenticated:
+        Notification.create_logout_notification(request.user)
+        messages.success(request, "Logout Successful — You’ve logged out safely. See you again soon!")
+    logout(request)
+    return redirect('core:login')

@@ -204,73 +204,54 @@
     </script>
     {% block extra_js %}{% endblock %}
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-messaging-compat.js"></script>
+    <!-- Global Status Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel">Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statusModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Firebase Configuration from Django settings
-        // Provide an empty JSON object string if firebase_config is not available to prevent JavaScript errors
-        const firebaseConfig = {{ firebase_config|safe|default:'{}' }};
-
-        // Initialize Firebase only if config is available and has an API key
-        if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
-            const app = firebase.initializeApp(firebaseConfig); // Initialize Firebase app
-
-            // Initialize Firebase Analytics if measurementId is provided
-            if (firebaseConfig.measurementId && firebase.analytics) {
-                firebase.analytics();
-                console.log("Firebase Analytics initialized.");
-            } else if (firebaseConfig.measurementId) {
-                console.warn("Firebase Analytics SDK not loaded. Analytics will not be collected.");
-            }
-
-            // Retrieve Firebase Messaging object
-            const messaging = firebase.messaging();
-
-            // Register the service worker first
-            let serviceWorkerRegistration = null;
-            if ("serviceWorker" in navigator) {
-                navigator.serviceWorker
-                    .register("{% static 'firebase-messaging-sw.js' %}") // Corrected path to static root
-                    .then((registration) => {
-                        console.log("Service Worker registered:", registration);
-                        serviceWorkerRegistration = registration;
-                        // Proceed with notification permission request and token generation
-                        requestNotificationPermissionAndGetToken(serviceWorkerRegistration);
-                    })
-                    .catch((err) => {
-                        console.error("Service Worker registration failed:", err);
-                    });
-            } else {
-                console.warn("Service Workers are not supported by this browser.");
-                requestNotificationPermissionAndGetToken(null); // Attempt without service worker if not supported
-            }
-
-            function requestNotificationPermissionAndGetToken(registration) {
-                Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                        const getTokenOptions = { vapidKey: "BKRbhLLAnVot5DK2wAgdZlC4nvoP0N0oYe8GADJCx5gLq-opYp2DX1sbwmlrIYNW33WLMpq01Gm_tK8HVYI50ws" };
-                        if (registration) {
-                            getTokenOptions.serviceWorkerRegistration = registration;
-                        }
-                        messaging.getToken(getTokenOptions).then((token) => {
-                            console.log("FCM Token:", token);
-                            // You can send this token to your backend to send targeted notifications
-                        }).catch((err) => {
-                            console.error("Error getting FCM token:", err);
-                        });
-                    } else {
-                        console.log("Notification permission denied.");
-                    }
-                }).catch((err) => {
-                    console.error("Error requesting notification permission:", err);
-                });
-            }
-        } else {
-            console.warn("Firebase configuration not found or incomplete. Firebase features may not work.");
+        // Reusable helper to show a status modal
+        function showStatus(message, level) {
+            const titleMap = {
+                'success': 'Success',
+                'error': 'Error',
+                'warning': 'Warning',
+                'info': 'Information',
+                'alert-success': 'Success',
+                'alert-danger': 'Error',
+                'alert-warning': 'Warning',
+                'alert-info': 'Information'
+            };
+            const modalEl = document.getElementById('statusModal');
+            const modal = new bootstrap.Modal(modalEl);
+            document.getElementById('statusModalBody').innerText = message;
+            document.getElementById('statusModalLabel').innerText = titleMap[level] || 'Status';
+            modal.show();
         }
-
+        // Auto-show Django messages as a modal using a hidden JSON data attribute
+        document.addEventListener('DOMContentLoaded', function() {
+            const el = document.getElementById('django-messages');
+            if (!el) return;
+            try {
+                const msgs = JSON.parse(el.dataset.messages || '[]');
+                if (msgs.length > 0) {
+                    showStatus(msgs[0].text, msgs[0].level);
+                }
+            } catch (e) {
+                console.warn('Failed to parse messages JSON:', e);
+            }
+        });
     </script>
 
     {% include 'chatbot/chat_widget.html' %}
@@ -304,21 +285,21 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                alert(data.message);
+                                showStatus(data.message, 'success');
                             } else {
-                                alert('Error sending SOS request: ' + data.error);
+                                showStatus('Error sending SOS request: ' + data.error, 'error');
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('An error occurred while sending the SOS request.');
+                            showStatus('An error occurred while sending the SOS request.', 'error');
                         });
 
                     }, function(error) {
-                        alert('Unable to retrieve your location for SOS request: ' + error.message);
+                        showStatus('Unable to retrieve your location for SOS request: ' + error.message, 'error');
                     });
                 } else {
-                    alert('Geolocation is not supported by your browser.');
+                    showStatus('Geolocation is not supported by your browser.', 'warning');
                 }
             }
 
@@ -339,6 +320,19 @@
             }
         });
     </script>
+
+    <!-- Hidden container for Django messages as JSON to avoid JS lint issues with template tags -->
+    <div id="django-messages" data-messages='
+        {% if messages %}
+            [
+            {% for message in messages %}
+                {"text":"{{ message|escapejs }}","level":"{{ message.tags }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+            ]
+        {% else %}
+            []
+        {% endif %}
+    '></div>
 
     <style>
         .sos-button {
