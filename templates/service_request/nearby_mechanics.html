@@ -64,8 +64,8 @@
             <div class="mechanic-list">
                 {% if nearby_mechanics %}
                     {% for mechanic_data in nearby_mechanics %}
-                        <div class="mechanic-card" data-lat="{{ mechanic_data.mechanic.latitude }}" data-lng="{{ mechanic_data.mechanic.longitude }}" data-name="{{ mechanic_data.mechanic.user.get_full_name }}" data-specialization="{{ mechanic_data.mechanic.specialization }}" data-distance="{{ mechanic_data.distance }}">
-                            <h5>{{ mechanic_data.mechanic.user.get_full_name }}</h5>
+                        <div class="mechanic-card" data-lat="{{ mechanic_data.mechanic.latitude }}" data-lng="{{ mechanic_data.mechanic.longitude }}" data-name="{{ mechanic_data.mechanic.user.get_full_name|default:mechanic_data.mechanic.user.username }}" data-specialization="{{ mechanic_data.mechanic.specialization }}" data-distance="{{ mechanic_data.distance }}">
+                            <h5>{{ mechanic_data.mechanic.user.get_full_name|default:mechanic_data.mechanic.user.username }}</h5>
                             <p>Specialization: {{ mechanic_data.mechanic.specialization }}</p>
                             <p class="distance">{{ mechanic_data.distance }} km away</p>
                             <button type="button"
@@ -280,27 +280,22 @@
         const confirmBody = document.getElementById('confirmMechanicBody');
         const confirmButton = document.getElementById('confirmMechanicButton');
 
+        function resetRoute() {
+            if (directionsRenderer) {
+                directionsRenderer.set('directions', null);
+            }
+            if (typeof fitMapToBounds === 'function') {
+                fitMapToBounds();
+            }
+        }
+
         function renderDetails(data) {
-            const availability = data.available ? 'Available' : 'Unavailable';
             const avgRating = (data.average_rating || 0).toFixed(2);
-            const reviewsHtml = (data.recent_reviews || []).length
-                ? data.recent_reviews.map(r => `
-                    <div class="border rounded p-2 mb-2">
-                        <div class="d-flex justify-content-between">
-                            <strong>${r.reviewer}</strong>
-                            <span><i class="fas fa-star text-warning"></i> ${r.rating}</span>
-                        </div>
-                        <small class="text-muted">${r.created_at}</small>
-                        <div>${r.comment || ''}</div>
-                    </div>
-                `).join('')
-                : '<div class="text-muted">No reviews yet.</div>';
 
             detailsBody.innerHTML = `
                 <div class="mb-2">
                     <div class="d-flex align-items-center mb-1">
                         <h5 class="me-2 mb-0">${data.name}</h5>
-                        <span class="badge ${data.available ? 'bg-success' : 'bg-secondary'}">${availability}</span>
                     </div>
                     <div class="text-muted">${data.specialization}</div>
                 </div>
@@ -333,10 +328,6 @@
                 <div class="mb-3">
                     <div class="text-uppercase small text-muted">Workshop Address</div>
                     <div>${data.workshop_address || 'N/A'}</div>
-                </div>
-                <div>
-                    <div class="text-uppercase small text-muted mb-1">Recent Reviews</div>
-                    ${reviewsHtml}
                 </div>
             `;
         }
@@ -409,6 +400,10 @@
             if (url) {
                 window.location.href = url;
             }
+        });
+
+        confirmModalEl.addEventListener('hidden.bs.modal', function () {
+            resetRoute();
         });
 
         // Handle clicks on mechanic cards to center map on their location

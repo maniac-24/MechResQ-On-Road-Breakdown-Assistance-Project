@@ -30,6 +30,8 @@ urlpatterns = [
     path('service-history/', views.service_history, name='service_history'),
     path('service-history/delete/<int:pk>/', views.delete_service_request, name='delete_service_request'),
     path('vehicles/', views.vehicles, name='vehicles'),
+    path('vehicles/<int:vehicle_id>/edit/', views.edit_vehicle, name='edit_vehicle'),
+    path('vehicles/<int:vehicle_id>/delete/', views.delete_vehicle, name='delete_vehicle'),
     path('profile/', views.profile, name='profile'),
     
     # API Endpoints

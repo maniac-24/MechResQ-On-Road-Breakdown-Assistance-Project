@@ -247,7 +247,9 @@
         });
     </script>
 
+    {% if user.is_authenticated %}
     {% include 'chatbot/chat_widget.html' %}
+    {% endif %}
 
     <!-- Hidden container for Django messages as JSON to avoid JS lint issues with template tags -->
     <div id="django-messages" data-messages='

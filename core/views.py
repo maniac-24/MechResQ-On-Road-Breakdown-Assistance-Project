@@ -611,8 +611,8 @@ def find_nearby_mechanics(request, service_request_id):
         return redirect('core:service_request_detail', pk=service_request_id)
 
     nearby_mechanics = []
-    # Filter mechanics to only include those with valid latitude and longitude
-    all_mechanics = Mechanic.objects.filter(available=True, latitude__isnull=False, longitude__isnull=False)
+    # Include all mechanics that have valid coordinates, regardless of availability
+    all_mechanics = Mechanic.objects.filter(latitude__isnull=False, longitude__isnull=False)
     all_with_distance = []
     
     for mechanic in all_mechanics:
@@ -640,20 +640,29 @@ def find_nearby_mechanics(request, service_request_id):
                 'distance': round(distance, 2)
             })
     
-    # Sort base list
+    # Sort base list by distance (within-radius mechanics first)
     nearby_mechanics.sort(key=lambda x: x['distance'])
 
-    # Fallback: if none within 50 km, show nearest 10 mechanics overall
-    if not nearby_mechanics:
+    # If we have only a few mechanics within 50 km, supplement with the next closest ones
+    # so the user can still see more options.
+    desired_min_count = 10
+    if len(nearby_mechanics) < desired_min_count and all_with_distance:
         all_with_distance.sort(key=lambda t: t[1])
-        fallback = all_with_distance[:10]
-        nearby_mechanics = [
-            {
+
+        # Avoid adding duplicates of mechanics already in nearby_mechanics
+        existing_ids = {entry['mechanic'].id for entry in nearby_mechanics}
+        extra = []
+        for (m, d) in all_with_distance:
+            if m.id in existing_ids:
+                continue
+            extra.append({
                 'mechanic': m,
                 'distance': round(d, 2)
-            }
-            for (m, d) in fallback
-        ]
+            })
+            if len(nearby_mechanics) + len(extra) >= desired_min_count:
+                break
+
+        nearby_mechanics.extend(extra)
         
         # Secondary fallback: if we still have no coordinates to calculate distances
         if not nearby_mechanics and len(all_with_distance) == 0:
@@ -721,7 +730,7 @@ def find_nearby_mechanics(request, service_request_id):
         {
             'lat': float(m['mechanic'].latitude),
             'lng': float(m['mechanic'].longitude),
-            'name': m['mechanic'].user.get_full_name(),
+            'name': m['mechanic'].user.get_full_name() or m['mechanic'].user.username,
             'specialization': m['mechanic'].specialization,
             'distance': m['distance']
         } for m in nearby_mechanics
@@ -837,6 +846,55 @@ def vehicles(request):
         'vehicles': vehicles,
         'active_page': 'vehicles'
     })
+
+
+@login_required
+def edit_vehicle(request, vehicle_id):
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, user=request.user)
+
+    if request.method == 'POST':
+        # Update basic fields from the manage vehicle modal
+        vehicle.name = request.POST.get('vehicleName', vehicle.name)
+        vehicle.vehicle_type = request.POST.get('vehicleType', vehicle.vehicle_type)
+        vehicle.make = request.POST.get('make', vehicle.make)
+        vehicle.model = request.POST.get('model', vehicle.model)
+
+        year_value = request.POST.get('year')
+        if year_value:
+            try:
+                vehicle.year = int(year_value)
+            except (TypeError, ValueError):
+                messages.error(request, 'Year must be a valid number.')
+
+        license_plate_value = request.POST.get('licensePlate')
+        if license_plate_value:
+            vehicle.license_plate = license_plate_value
+
+        # Optional: update image if a new one is uploaded
+        if 'vehicleImage' in request.FILES:
+            vehicle.image = request.FILES['vehicleImage']
+
+        try:
+            vehicle.save()
+            messages.success(request, 'Vehicle updated successfully!')
+        except Exception as e:
+            messages.error(request, f'Error updating vehicle: {str(e)}')
+
+    return redirect('core:vehicles')
+
+
+@login_required
+def delete_vehicle(request, vehicle_id):
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, user=request.user)
+
+    if request.method == 'POST':
+        try:
+            vehicle.delete()
+            messages.success(request, 'Vehicle deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting vehicle: {str(e)}')
+
+    return redirect('core:vehicles')
 
 @login_required
 def profile(request):
