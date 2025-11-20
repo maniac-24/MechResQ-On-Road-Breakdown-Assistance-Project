@@ -164,15 +164,13 @@ def chatbot_response(request):
                 + user_message
             )
 
-            # OpenRouter API configuration
-            OPENROUTER_API_KEY = settings.OPENROUTER_API_KEY
-            OPENROUTER_MODEL = settings.CHATBOT_MODEL # Use model from settings
-            OPENROUTER_API_BASE = "https://openrouter.ai/api/v1/chat/completions"
-
-            headers = {
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
-            }
+            # Gemini API configuration (keys and model from environment via settings)
+            GEMINI_API_KEY = settings.GEMINI_API_KEY
+            GEMINI_MODEL = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+            GEMINI_API_URL = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+            )
 
             payload = {
                 "contents": [
@@ -277,7 +275,7 @@ def chatbot_response(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except httpx.HTTPStatusError as e:
             # Log the full response text for debugging
-            print(f"OpenRouter API HTTP Error: {e.response.status_code} - {e.response.text}")
+            print(f"Gemini API HTTP Error: {e.response.status_code} - {e.response.text}")
             return JsonResponse({'error': f"HTTP error: {e.response.status_code} - {e.response.text}", 'api_response_detail': e.response.text}, status=500)
         except Exception as e:
             detail = f"Generic chatbot exception: {str(e)}"
